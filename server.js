@@ -79,6 +79,11 @@ async function migrate() {
     ALTER TABLE events ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
     ALTER TABLE news ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
     ALTER TABLE events ADD COLUMN IF NOT EXISTS teaser TEXT;
+    ALTER TABLE events ADD COLUMN IF NOT EXISTS content TEXT;
+    ALTER TABLE projects ADD COLUMN IF NOT EXISTS content TEXT;
+    ALTER TABLE events ADD COLUMN IF NOT EXISTS gallery TEXT DEFAULT '[]';
+    ALTER TABLE projects ADD COLUMN IF NOT EXISTS gallery TEXT DEFAULT '[]';
+    ALTER TABLE news ADD COLUMN IF NOT EXISTS gallery TEXT DEFAULT '[]';
     CREATE TABLE IF NOT EXISTS members (
       id SERIAL PRIMARY KEY,
       appsheet_row_id TEXT UNIQUE,
@@ -149,15 +154,17 @@ async function migrate() {
 
 // ——— Generic upsert (whitelisted cols) ———
 const COLS = {
-  events: ['id','title','date','location','description','poster','teaser','pdf','organizers','sponsors','info','sort_order'],
-  news: ['id','title','date','author','excerpt','body','image','sort_order'],
-  projects: ['id','name','tag','description','status','color','link','image','sort_order']
+  events: ['id','title','date','location','description','content','poster','teaser','pdf','organizers','sponsors','info','gallery','sort_order'],
+  news: ['id','title','date','author','excerpt','body','image','gallery','sort_order'],
+  projects: ['id','name','tag','description','content','status','color','link','image','gallery','sort_order']
 };
 async function upsert(table, row) {
   const cols = COLS[table];
   const vals = cols.map(c => {
     let v = row[c];
     if (c === 'date' && v && typeof v === 'string' && v.length === 16) v = v + ':00';
+    if (c === 'gallery' && Array.isArray(v)) v = JSON.stringify(v);
+    if (c === 'gallery' && v == null) v = '[]';
     return v ?? null;
   });
   const placeholders = cols.map((_,i) => `$${i+1}`).join(',');

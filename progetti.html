@@ -293,7 +293,7 @@ async function renderProjects() {
           <div><div class="k">Categoria</div><div class="v">${esc(p.tag||'—')}</div></div>
           <div><div class="k">Stato</div><div class="v" style="color:${statusColor(p.status)}">● ${esc(p.status||'—')}</div></div>
         </div>
-        ${p.link?`<a class="cta" href="${esc(p.link)}" target="_blank" rel="noopener">Vedi il progetto ↗</a>`:`<span class="cta" style="opacity:.5;cursor:default">In arrivo →</span>`}
+        ${p.content?`<a class="cta" href="/dettaglio.html?type=project&id=${encodeURIComponent(p.id)}">Scopri l'iniziativa →</a>`:p.link?`<a class="cta" href="${esc(p.link)}" target="_blank" rel="noopener">Vedi il progetto ↗</a>`:`<span class="cta" style="opacity:.5;cursor:default">In arrivo →</span>`}
       </div>
     </div>`).join('');
 }
@@ -327,10 +327,11 @@ async function renderEvents() {
             <div class="when" style="font-size:.95rem">📅 ${esc(formatEventDate(e.date))}</div>
             ${e.location?`<div style="font-size:.9rem;color:var(--ink-soft);display:flex;align-items:flex-start;gap:.4rem;line-height:1.5"><span>📍</span><span>${esc(e.location).replace(/,/g,',<br>')}</span></div>`:''}
             ${e.description?`<p style="margin-top:.8rem">${esc(e.description)}</p>`:''}
-            ${(e.pdf||e.info)?`<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem;align-items:center">
-              ${e.pdf?`<a href="${esc(e.pdf)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.5rem;padding:.7rem 1.2rem;background:var(--brand);color:#fff;text-decoration:none;border-radius:999px;font-weight:600;font-size:.9rem">📄 Scarica locandina</a>`:''}
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem;align-items:center">
+              ${e.content?`<a href="/dettaglio.html?type=event&id=${encodeURIComponent(e.id)}" style="display:inline-flex;align-items:center;gap:.5rem;padding:.7rem 1.2rem;background:var(--brand);color:#fff;text-decoration:none;border-radius:999px;font-weight:600;font-size:.9rem">Leggi l'approfondimento →</a>`:''}
+              ${e.pdf?`<a href="${esc(e.pdf)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.5rem;padding:.7rem 1.2rem;background:${e.content?'transparent':'var(--brand)'};color:${e.content?'var(--ink)':'#fff'};border:${e.content?'1px solid var(--line)':'0'};text-decoration:none;border-radius:999px;font-weight:600;font-size:.9rem">📄 Locandina</a>`:''}
               ${e.info?`<span style="font-size:.85rem;color:var(--ink-soft)">${esc(e.info)}</span>`:''}
-            </div>`:''}
+            </div>
             ${(e.organizers||e.sponsors)?`<div style="margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--line);font-size:.78rem;color:var(--ink-soft);letter-spacing:.05em">
               ${e.organizers?`<strong style="color:var(--ink)">Organizzato da:</strong> ${esc(e.organizers)}<br>`:''}
               ${e.sponsors?`<strong style="color:var(--ink)">Con il sostegno di:</strong> ${esc(e.sponsors)}`:''}

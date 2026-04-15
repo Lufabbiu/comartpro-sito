@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dettaglio — Com.Art.Pro APS ETS</title>
+<link rel="icon" type="image/png" href="/public/logo.png?v=3">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#0e1a2b;--ink-soft:#2a3a55;--paper:#f4efe4;--paper-alt:#ebe4d4;--brand:#2d7a3e;--brand-dark:#1e5a2c;--brand-soft:#4a9f6b;--gold:#c89b3c;--red:#b8372e;--line:rgba(14,26,43,.12)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  img{max-width:100%;display:block}
+
+  .nav{position:sticky;top:0;z-index:100;background:rgba(244,239,228,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem}
+  .brand{display:flex;align-items:center;gap:.8rem;text-decoration:none}
+  .brand .logo-wrap{width:48px;height:48px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+  .brand .logo-wrap img{width:100%;height:100%;object-fit:contain;padding:2px}
+  .brand .name{font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;color:var(--brand-dark)}
+  .brand .sub{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
+  .nav-links{display:flex;gap:2rem;list-style:none;align-items:center}
+  .nav-links a{text-decoration:none;font-size:.95rem;color:var(--ink-soft);font-weight:500}
+  .nav-links a:hover{color:var(--brand-dark)}
+  .nav-cta{padding:.6rem 1.2rem;background:var(--brand);color:#fff!important;border-radius:999px;font-weight:600;font-size:.9rem}
+
+  .hero{padding:4rem 2rem 3rem;max-width:900px;margin:0 auto}
+  .back{display:inline-flex;align-items:center;gap:.5rem;color:var(--ink-soft);text-decoration:none;font-size:.9rem;margin-bottom:2rem;transition:color .2s}
+  .back:hover{color:var(--brand-dark)}
+  .eyebrow{display:inline-flex;align-items:center;gap:.6rem;font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;color:var(--brand-dark);font-weight:600;padding:.4rem .9rem;background:rgba(45,122,62,.08);border-radius:999px;margin-bottom:1.5rem}
+  .eyebrow::before{content:"";width:6px;height:6px;background:var(--brand);border-radius:50%}
+  h1{font-family:'Fraunces',serif;font-size:clamp(2rem,4.5vw,3.4rem);line-height:1.08;letter-spacing:-.02em;font-weight:700;margin-bottom:1.2rem}
+  .summary{font-size:1.2rem;color:var(--ink-soft);max-width:60ch;margin-bottom:2rem}
+  .meta{display:flex;gap:2rem;flex-wrap:wrap;padding:1.5rem 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:3rem}
+  .meta div .k{font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-soft);font-weight:700;margin-bottom:.3rem}
+  .meta div .v{font-size:1rem;color:var(--ink);font-weight:600}
+
+  .cover-img{max-width:1100px;margin:0 auto 4rem;padding:0 2rem}
+  .cover-img img{width:100%;max-height:70vh;object-fit:cover;border-radius:20px;box-shadow:0 30px 80px rgba(14,26,43,.15)}
+
+  article{max-width:720px;margin:0 auto;padding:0 2rem 5rem}
+  article h2{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;letter-spacing:-.01em;margin:3rem 0 1rem;color:var(--ink)}
+  article h3{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:600;margin:2.4rem 0 .8rem}
+  article p{font-size:1.1rem;color:var(--ink);margin-bottom:1.3rem;max-width:65ch}
+  article strong{font-weight:600;color:var(--ink)}
+  article em{font-style:italic}
+  article ul, article ol{margin:1rem 0 1.5rem 1.5rem}
+  article li{font-size:1.1rem;color:var(--ink);margin-bottom:.5rem}
+  article a{color:var(--brand-dark);text-decoration:underline;text-decoration-color:rgba(45,122,62,.3);text-underline-offset:3px}
+  article a:hover{text-decoration-color:var(--brand)}
+  article blockquote{border-left:4px solid var(--brand);padding:.5rem 0 .5rem 1.5rem;margin:2rem 0;color:var(--ink-soft);font-style:italic;font-size:1.15rem}
+
+  .gallery{max-width:1100px;margin:2rem auto 4rem;padding:0 2rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
+  .gallery img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;cursor:pointer;transition:transform .3s}
+  .gallery img:hover{transform:scale(1.02)}
+
+  .sidebar-info{background:#fff;border-radius:16px;padding:2rem;border:1px solid var(--line);margin:3rem 0}
+  .sidebar-info h4{font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:1rem}
+  .sidebar-info p{font-size:.95rem;color:var(--ink-soft);margin-bottom:.5rem}
+  .sidebar-info strong{color:var(--ink)}
+  .cta-box{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1.5rem}
+  .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.9rem 1.5rem;border-radius:999px;font-weight:600;text-decoration:none;font-size:.95rem;transition:all .2s}
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.primary:hover{background:var(--brand-dark)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--brand)}
+
+  footer{background:var(--ink);color:rgba(244,239,228,.7);padding:3rem 2rem 2rem;margin-top:4rem}
+  .footer-inner{max-width:1200px;margin:0 auto;text-align:center;font-size:.85rem}
+  .footer-inner a{color:var(--brand-soft);text-decoration:none;margin:0 1rem}
+
+  .loading,.error{padding:6rem 2rem;text-align:center;color:var(--ink-soft)}
+
+  @media(max-width:700px){.nav-links{display:none}.meta{gap:1rem}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <span class="logo-wrap"><img src="/public/logo.png?v=3" alt=""></span>
+      <div><div class="name">Com.Art.Pro</div><div class="sub">APS ETS</div></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/#associazione">Associazione</a></li>
+      <li><a href="/progetti.html">Progetti</a></li>
+      <li><a href="/soci.html">Soci</a></li>
+      <li><a href="/#contatti">Contatti</a></li>
+      <li><a class="nav-cta" href="/#iscrizione">Associati</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main"><div class="loading">Caricamento…</div></main>
+
+<footer>
+  <div class="footer-inner">
+    <p>Com.Art.Pro APS ETS · Alessano e Montesardo · <a href="/">Home</a> · <a href="/progetti.html">Progetti</a> · <a href="/#contatti">Contatti</a></p>
+    <p style="margin-top:1rem;opacity:.6">© 2026 · Tutti i diritti riservati</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+const esc = s => String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const params = new URLSearchParams(location.search);
+const type = params.get('type');
+const id = params.get('id');
+const main = document.getElementById('main');
+
+const LABELS = { project: 'Progetto', event: 'Evento', news: 'Notizia' };
+const COLLECTION = { project: 'projects', event: 'events', news: 'news' };
+const BACK = { project: '/progetti.html', event: '/progetti.html', news: '/progetti.html' };
+
+function formatDate(iso, withTime = true) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const date = d.toLocaleDateString('it-IT', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const date2 = date.charAt(0).toUpperCase() + date.slice(1);
+  if (!withTime) return date2;
+  const time = d.toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' });
+  return `${date2} · ore ${time}`;
+}
+
+async function load() {
+  if (!type || !id) return showError('Parametri mancanti');
+  try {
+    const r = await fetch(`/api/${COLLECTION[type]}`);
+    const items = await r.json();
+    const item = items.find(x => x.id === id);
+    if (!item) return showError('Contenuto non trovato');
+    render(item);
+  } catch (e) { showError(e.message); }
+}
+
+function render(d) {
+  document.title = (d.title || d.name) + ' — Com.Art.Pro APS ETS';
+  const title = d.title || d.name;
+  const content = d.content || d.body;
+  const cover = d.poster || d.image;
+  let gallery = []; try { gallery = JSON.parse(d.gallery || '[]'); } catch {}
+  const bodyHtml = content ? marked.parse(content) : '';
+
+  const metaBlocks = [];
+  if (type === 'event') {
+    if (d.date) metaBlocks.push({ k:'Quando', v: formatDate(d.date) });
+    if (d.location) metaBlocks.push({ k:'Dove', v: d.location });
+    if (d.organizers) metaBlocks.push({ k:'Organizzato da', v: d.organizers });
+  }
+  if (type === 'project') {
+    if (d.tag) metaBlocks.push({ k:'Categoria', v: d.tag });
+    if (d.status) metaBlocks.push({ k:'Stato', v: d.status });
+  }
+  if (type === 'news') {
+    if (d.date) metaBlocks.push({ k:'Pubblicato', v: formatDate(d.date, false) });
+    if (d.author) metaBlocks.push({ k:'Autore', v: d.author });
+  }
+
+  main.innerHTML = `
+    <header class="hero">
+      <a class="back" href="${BACK[type]}">← Torna ai ${type==='news'?'contenuti':'progetti'}</a>
+      <div class="eyebrow">${esc(LABELS[type])}${d.tag?' · '+esc(d.tag):''}</div>
+      <h1>${esc(title)}</h1>
+      ${d.description||d.excerpt?`<p class="summary">${esc(d.description||d.excerpt)}</p>`:''}
+      ${metaBlocks.length?`<div class="meta">${metaBlocks.map(m=>`<div><div class="k">${esc(m.k)}</div><div class="v">${esc(m.v)}</div></div>`).join('')}</div>`:''}
+    </header>
+    ${cover?`<div class="cover-img"><img src="${esc(cover)}" alt="${esc(title)}"></div>`:''}
+    ${bodyHtml?`<article>${bodyHtml}</article>`:''}
+    ${gallery.length?`<div class="gallery">${gallery.map(g=>`<img src="${esc(typeof g==='string'?g:g.url)}" alt="" loading="lazy">`).join('')}</div>`:''}
+    ${renderSidebar(d)}
+  `;
+}
+
+function renderSidebar(d) {
+  const parts = [];
+  if (type === 'event') {
+    if (d.info) parts.push(`<p>${esc(d.info)}</p>`);
+    if (d.sponsors) parts.push(`<p><strong>Con il sostegno di:</strong> ${esc(d.sponsors)}</p>`);
+    const ctas = [];
+    if (d.pdf) ctas.push(`<a class="btn primary" href="${esc(d.pdf)}" target="_blank" rel="noopener">📄 Scarica locandina</a>`);
+    ctas.push(`<a class="btn ghost" href="${BACK[type]}">Altri eventi</a>`);
+    if (ctas.length) parts.push(`<div class="cta-box">${ctas.join('')}</div>`);
+  }
+  if (type === 'project' && d.link) {
+    parts.push(`<div class="cta-box"><a class="btn primary" href="${esc(d.link)}" target="_blank" rel="noopener">Vai al progetto ↗</a><a class="btn ghost" href="/progetti.html">Altri progetti</a></div>`);
+  }
+  if (!parts.length) return '';
+  return `<div style="max-width:720px;margin:0 auto;padding:0 2rem"><div class="sidebar-info"><h4>Informazioni utili</h4>${parts.join('')}</div></div>`;
+}
+
+function showError(msg) {
+  main.innerHTML = `<div class="error"><p style="font-size:1.2rem;margin-bottom:1rem">Contenuto non disponibile</p><p>${esc(msg)}</p><p style="margin-top:2rem"><a href="/" class="btn primary">Torna alla home</a></p></div>`;
+}
+
+load();
+</script>
+</body>
+</html>

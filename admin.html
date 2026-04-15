@@ -266,6 +266,9 @@ function eventForm(d) {
       <div class="field"><label>Organizzato da</label><input name="organizers" value="${esc(d.organizers||'')}" placeholder="Associazione X · Associazione Y"></div>
       <div class="field"><label>Con il sostegno di</label><input name="sponsors" value="${esc(d.sponsors||'')}" placeholder="Sponsor 1 · Sponsor 2"></div>
       <div class="field"><label>Info / dettagli aggiuntivi</label><input name="info" value="${esc(d.info||'')}" placeholder="Ingresso libero · Info 349.xxx"></div>
+      <div class="field"><label>Approfondimento (markdown) — pagina dettaglio</label><textarea name="content" rows="10" placeholder="## Contesto&#10;Testo esteso dell'evento...&#10;&#10;## Programma&#10;...">${esc(d.content||'')}</textarea>
+        <div style="font-size:.78rem;color:var(--ink-soft);margin-top:.4rem">Se compilato, sarà generata una pagina di approfondimento linkata dalla card evento.</div>
+      </div>
       <div class="form-actions">
         <button class="btn primary" type="submit">${d.id ? 'Salva modifiche' : 'Crea evento'}</button>
         <button class="btn ghost" type="button" onclick="cancelEdit()">Annulla</button>
@@ -377,6 +380,9 @@ function projectForm(d) {
         <input type="hidden" name="image" value="${esc(d.image||'')}">
       </div>
       <div class="field"><label>Link esterno (opzionale)</label><input name="link" value="${esc(d.link||'')}" placeholder="https://..."></div>
+      <div class="field"><label>Approfondimento (markdown) — pagina dettaglio</label><textarea name="content" rows="10" placeholder="## Perché questo progetto&#10;...&#10;&#10;## Come funziona&#10;...">${esc(d.content||'')}</textarea>
+        <div style="font-size:.78rem;color:var(--ink-soft);margin-top:.4rem">Se compilato, sarà generata una pagina di approfondimento linkata dalla card progetto.</div>
+      </div>
       <div class="form-actions">
         <button class="btn primary" type="submit">${d.id?'Salva modifiche':'Crea progetto'}</button>
         <button class="btn ghost" type="button" onclick="cancelEdit()">Annulla</button>
@@ -502,13 +508,22 @@ window.openAI = async function(type) {
         <input type="url" id="aiUrl" placeholder="https://articolo-su-qualcosa.it/...">
       </div>
       <div class="field">
-        <label>Immagine di riferimento (opzionale)</label>
+        <label>Immagini di riferimento (opzionale, multiple)</label>
         <label class="upload-box">
-          <input type="file" id="aiImage" accept="image/*">
-          <div class="ph">📎 Clicca per caricare locandina, foto, ecc.</div>
-          <div class="upload-preview" id="aiImagePreview"></div>
+          <input type="file" id="aiImages" accept="image/*" multiple>
+          <div class="ph">📎 Clicca per caricare locandine, foto, screenshot (fino a 4)</div>
+          <div class="upload-preview" id="aiImagesPreview"></div>
         </label>
-        <input type="hidden" id="aiImageUrl">
+        <input type="hidden" id="aiImageUrls" value="[]">
+      </div>
+      <div class="field">
+        <label>Allegati / documenti (opzionale)</label>
+        <label class="upload-box">
+          <input type="file" id="aiDocs" accept=".pdf,.doc,.docx,.txt,.md" multiple>
+          <div class="ph">📄 PDF, Word, testo — servono come riferimento nominale per l'AI</div>
+          <div class="upload-preview" id="aiDocsPreview"></div>
+        </label>
+        <input type="hidden" id="aiDocsUrls" value="[]">
       </div>
       <div class="field" style="display:flex;align-items:center;gap:.6rem;padding:.8rem;background:var(--paper-alt);border-radius:8px">
         <input type="checkbox" id="aiGenImg" style="width:auto;margin:0">
@@ -526,24 +541,41 @@ window.openAI = async function(type) {
   document.body.appendChild(modal);
   modal.addEventListener('click', e => { if (e.target === modal) closeAI(); });
 
-  document.getElementById('aiImage').onchange = async e => {
-    const file = e.target.files[0]; if (!file) return;
-    const preview = document.getElementById('aiImagePreview');
-    preview.textContent = 'Caricamento…';
-    try {
-      const r = await uploadFile(file);
-      document.getElementById('aiImageUrl').value = r.url;
-      preview.textContent = '✓ ' + r.name;
-    } catch (err) { preview.textContent = 'Errore: ' + err.message; }
-  };
+  async function multiUpload(inputId, urlsId, previewId) {
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+    const urlsField = document.getElementById(urlsId);
+    input.onchange = async () => {
+      const files = [...input.files];
+      if (!files.length) return;
+      preview.innerHTML = files.map((f,i) => `<div data-idx="${i}">⏳ ${esc(f.name)}</div>`).join('');
+      const existing = JSON.parse(urlsField.value || '[]');
+      const newUrls = [];
+      for (let i = 0; i < files.length; i++) {
+        try {
+          const r = await uploadFile(files[i]);
+          newUrls.push({ url: r.url, name: r.name });
+          preview.querySelector(`[data-idx="${i}"]`).textContent = '✓ ' + r.name;
+        } catch (err) {
+          preview.querySelector(`[data-idx="${i}"]`).textContent = '✗ ' + err.message;
+        }
+      }
+      urlsField.value = JSON.stringify([...existing, ...newUrls]);
+    };
+  }
+  multiUpload('aiImages', 'aiImageUrls', 'aiImagesPreview');
+  multiUpload('aiDocs', 'aiDocsUrls', 'aiDocsPreview');
 
   document.getElementById('aiGo').onclick = async () => {
     const text = document.getElementById('aiText').value.trim();
     const sourceUrl = document.getElementById('aiUrl').value.trim();
-    const imageUrl = document.getElementById('aiImageUrl').value.trim();
+    const images = JSON.parse(document.getElementById('aiImageUrls').value || '[]');
+    const docs = JSON.parse(document.getElementById('aiDocsUrls').value || '[]');
+    const imageUrls = images.map(x => x.url);
+    const docNames = docs.map(x => x.name);
     const genImg = document.getElementById('aiGenImg').checked;
-    if (!text && !sourceUrl && !imageUrl) {
-      alert('Fornisci almeno una fonte: testo, link o immagine.');
+    if (!text && !sourceUrl && !imageUrls.length && !docNames.length) {
+      alert('Fornisci almeno una fonte: testo, link, immagine o documento.');
       return;
     }
     const status = document.getElementById('aiStatus');
@@ -553,7 +585,7 @@ window.openAI = async function(type) {
     status.innerHTML = '<div class="alert ok">⏳ Generazione bozza in corso...</div>';
     try {
       const draft = await api('/api/ai/draft', { method: 'POST',
-        body: JSON.stringify({ type, text, sourceUrl, imageUrl }) });
+        body: JSON.stringify({ type, text, sourceUrl, imageUrls, documents: docNames }) });
       let generatedImage = null;
       if (genImg && draft.suggestedImagePrompt) {
         status.innerHTML = '<div class="alert ok">🎨 Generazione immagine DALL-E...</div>';
@@ -563,7 +595,7 @@ window.openAI = async function(type) {
           generatedImage = img.url;
         } catch (err) { console.warn('Image gen failed:', err.message); }
       }
-      applyDraft(type, draft, generatedImage, imageUrl);
+      applyDraft(type, draft, generatedImage, imageUrls[0]);
       closeAI();
     } catch (err) {
       status.innerHTML = `<div class="alert err">${esc(err.message)}</div>`;
@@ -587,8 +619,8 @@ function applyDraft(type, draft, generatedImage, sourceImage) {
   if (!form) return;
 
   const map = {
-    project: { name:'name', tag:'tag', description:'description', status:'status' },
-    event:   { title:'title', date:'date', location:'location', description:'description', organizers:'organizers', sponsors:'sponsors', info:'info' },
+    project: { name:'name', tag:'tag', description:'description', status:'status', content:'content' },
+    event:   { title:'title', date:'date', location:'location', description:'description', content:'content', organizers:'organizers', sponsors:'sponsors', info:'info' },
     news:    { title:'title', excerpt:'excerpt', body:'body' }
   };
   const imageField = type === 'event' ? 'poster' : 'image';
