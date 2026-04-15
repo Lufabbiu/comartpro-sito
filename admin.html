@@ -80,7 +80,12 @@
   .upload-box:hover{border-color:var(--brand)}
   .upload-box input{display:none}
   .upload-box .ph{color:var(--ink-soft);font-size:.9rem}
-  .upload-preview{margin-top:.8rem;font-size:.85rem;color:var(--brand-dark);font-weight:600;word-break:break-all}
+  .upload-preview{margin-top:.8rem;font-size:.85rem;color:var(--brand-dark);font-weight:600;word-break:break-all;display:flex;flex-direction:column;align-items:center;gap:.6rem}
+  .upload-preview img{max-width:180px;max-height:180px;border-radius:8px;border:1px solid var(--line);background:#fff;object-fit:contain;box-shadow:0 6px 20px rgba(14,26,43,.08)}
+  .upload-preview .fname{font-size:.8rem;color:var(--ink-soft);font-weight:500}
+  .upload-preview .ok{color:var(--brand-dark);font-weight:700}
+  .upload-preview .docs-list{display:flex;flex-direction:column;gap:.3rem;align-items:stretch;width:100%}
+  .upload-preview .docs-list div{padding:.4rem .6rem;background:#fff;border-radius:6px;border:1px solid var(--line);text-align:left;font-size:.82rem}
 
   .empty{text-align:center;padding:3rem;color:var(--ink-soft);background:var(--paper-alt);border-radius:12px}
 
@@ -127,6 +132,20 @@ async function uploadFile(file) {
 }
 
 function esc(s) { return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function isImage(url) { return /\.(png|jpe?g|gif|webp|svg|avif)(\?|$)/i.test(url||''); }
+function isPdf(url) { return /\.pdf(\?|$)/i.test(url||''); }
+function previewHtml(url, label) {
+  if (!url) return '';
+  const safe = esc(url);
+  if (isImage(url)) {
+    return `<img src="${safe}" alt="preview"><span class="ok">${esc(label || '✓ Caricata')}</span><span class="fname">${safe}</span>`;
+  }
+  if (isPdf(url)) {
+    return `<div style="display:flex;gap:.8rem;align-items:center;padding:.8rem 1rem;background:#fff;border:1px solid var(--line);border-radius:8px"><span style="font-size:1.8rem">📄</span><div><div class="ok">${esc(label || '✓ PDF caricato')}</div><a href="${safe}" target="_blank" style="font-size:.78rem;color:var(--ink-soft)">${safe}</a></div></div>`;
+  }
+  return `<span class="ok">${esc(label || '✓')} ${safe}</span>`;
+}
 
 function render() {
   if (!state.admin) return renderLogin();
@@ -244,14 +263,14 @@ function eventForm(d) {
         <div class="field"><label>Locandina (immagine principale)</label>
           <label class="upload-box"><input type="file" accept="image/*" data-target="poster">
             <div class="ph">📎 Clicca per caricare</div>
-            <div class="upload-preview" data-preview="poster">${d.poster ? `Attuale: ${esc(d.poster)}` : ''}</div>
+            <div class="upload-preview" data-preview="poster">${previewHtml(d.poster, 'Attuale')}</div>
           </label>
           <input type="hidden" name="poster" value="${esc(d.poster||'')}">
         </div>
         <div class="field"><label>Foto teaser (anteprima lista)</label>
           <label class="upload-box"><input type="file" accept="image/*" data-target="teaser">
             <div class="ph">📎 Clicca per caricare</div>
-            <div class="upload-preview" data-preview="teaser">${d.teaser ? `Attuale: ${esc(d.teaser)}` : ''}</div>
+            <div class="upload-preview" data-preview="teaser">${previewHtml(d.teaser, 'Attuale')}</div>
           </label>
           <input type="hidden" name="teaser" value="${esc(d.teaser||'')}">
         </div>
@@ -259,7 +278,7 @@ function eventForm(d) {
       <div class="field"><label>PDF locandina (opzionale)</label>
         <label class="upload-box"><input type="file" accept="application/pdf" data-target="pdf">
           <div class="ph">📎 Clicca per caricare</div>
-          <div class="upload-preview" data-preview="pdf">${d.pdf ? `Attuale: ${esc(d.pdf)}` : ''}</div>
+          <div class="upload-preview" data-preview="pdf">${previewHtml(d.pdf, 'Attuale')}</div>
         </label>
         <input type="hidden" name="pdf" value="${esc(d.pdf||'')}">
       </div>
@@ -317,7 +336,7 @@ function newsForm(d) {
       <div class="field"><label>Immagine principale</label>
         <label class="upload-box"><input type="file" accept="image/*" data-target="image">
           <div class="ph">📎 Clicca per caricare</div>
-          <div class="upload-preview" data-preview="image">${d.image?`Attuale: ${esc(d.image)}`:''}</div>
+          <div class="upload-preview" data-preview="image">${previewHtml(d.image, 'Attuale')}</div>
         </label>
         <input type="hidden" name="image" value="${esc(d.image||'')}">
       </div>
@@ -375,7 +394,7 @@ function projectForm(d) {
       <div class="field"><label>Immagine progetto / teaser</label>
         <label class="upload-box"><input type="file" accept="image/*" data-target="image">
           <div class="ph">📎 Clicca per caricare</div>
-          <div class="upload-preview" data-preview="image">${d.image?`Attuale: ${esc(d.image)}`:''}</div>
+          <div class="upload-preview" data-preview="image">${previewHtml(d.image, 'Attuale')}</div>
         </label>
         <input type="hidden" name="image" value="${esc(d.image||'')}">
       </div>
@@ -466,12 +485,14 @@ function bindForms() {
       const target = e.target.dataset.target;
       const form = e.target.closest('form');
       const preview = form.querySelector(`[data-preview="${target}"]`);
-      preview.textContent = 'Caricamento…';
+      preview.innerHTML = '<span class="fname">⏳ Caricamento…</span>';
       try {
         const r = await uploadFile(file);
         form.querySelector(`input[name="${target}"]`).value = r.url;
-        preview.textContent = '✓ ' + r.name;
-      } catch (err) { preview.textContent = 'Errore: ' + err.message; }
+        preview.innerHTML = previewHtml(r.url, '✓ ' + r.name);
+      } catch (err) {
+        preview.innerHTML = `<span style="color:var(--red)">Errore: ${esc(err.message)}</span>`;
+      }
     };
   });
 }
@@ -541,30 +562,43 @@ window.openAI = async function(type) {
   document.body.appendChild(modal);
   modal.addEventListener('click', e => { if (e.target === modal) closeAI(); });
 
-  async function multiUpload(inputId, urlsId, previewId) {
+  async function multiUpload(inputId, urlsId, previewId, showThumbs) {
     const input = document.getElementById(inputId);
     const preview = document.getElementById(previewId);
     const urlsField = document.getElementById(urlsId);
     input.onchange = async () => {
       const files = [...input.files];
       if (!files.length) return;
-      preview.innerHTML = files.map((f,i) => `<div data-idx="${i}">⏳ ${esc(f.name)}</div>`).join('');
+      if (showThumbs) {
+        preview.style.flexDirection = 'row';
+        preview.style.flexWrap = 'wrap';
+        preview.style.justifyContent = 'center';
+        preview.innerHTML = files.map((f,i) => `<div data-idx="${i}" style="text-align:center"><div style="width:80px;height:80px;background:#fff;border:1px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--ink-soft)">⏳</div><div style="font-size:.7rem;margin-top:.3rem;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</div></div>`).join('');
+      } else {
+        preview.innerHTML = `<div class="docs-list">${files.map((f,i) => `<div data-idx="${i}">⏳ ${esc(f.name)}</div>`).join('')}</div>`;
+      }
       const existing = JSON.parse(urlsField.value || '[]');
       const newUrls = [];
       for (let i = 0; i < files.length; i++) {
         try {
           const r = await uploadFile(files[i]);
           newUrls.push({ url: r.url, name: r.name });
-          preview.querySelector(`[data-idx="${i}"]`).textContent = '✓ ' + r.name;
+          const node = preview.querySelector(`[data-idx="${i}"]`);
+          if (showThumbs) {
+            node.innerHTML = `<img src="${esc(r.url)}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--line)"><div style="font-size:.7rem;margin-top:.3rem;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--brand-dark)">✓ ${esc(r.name)}</div>`;
+          } else {
+            node.innerHTML = `📄 ✓ ${esc(r.name)}`;
+          }
         } catch (err) {
-          preview.querySelector(`[data-idx="${i}"]`).textContent = '✗ ' + err.message;
+          const node = preview.querySelector(`[data-idx="${i}"]`);
+          if (node) node.textContent = '✗ ' + err.message;
         }
       }
       urlsField.value = JSON.stringify([...existing, ...newUrls]);
     };
   }
-  multiUpload('aiImages', 'aiImageUrls', 'aiImagesPreview');
-  multiUpload('aiDocs', 'aiDocsUrls', 'aiDocsPreview');
+  multiUpload('aiImages', 'aiImageUrls', 'aiImagesPreview', true);
+  multiUpload('aiDocs', 'aiDocsUrls', 'aiDocsPreview', false);
 
   document.getElementById('aiGo').onclick = async () => {
     const text = document.getElementById('aiText').value.trim();
@@ -659,16 +693,16 @@ function applyDraft(type, draft, generatedImage, sourceImage) {
     if (img) {
       img.value = mainImage;
       const preview = form.querySelector(`[data-preview="${imageField}"]`);
-      if (preview) preview.textContent = '✓ ' + (mainImage === generatedImage ? 'Immagine generata AI: ' : 'Immagine caricata: ') + mainImage;
+      const label = mainImage === generatedImage ? '✓ Generata con AI' : '✓ Caricata';
+      if (preview) preview.innerHTML = previewHtml(mainImage, label);
     }
   }
-  // Se caricata E generata entrambe (solo eventi hanno teaser separato): metti generata nel teaser
   if (type === 'event' && sourceImage && generatedImage) {
     const teaser = form.querySelector('input[name="teaser"]');
     if (teaser) {
       teaser.value = generatedImage;
       const p = form.querySelector('[data-preview="teaser"]');
-      if (p) p.textContent = '✓ Immagine AI (teaser): ' + generatedImage;
+      if (p) p.innerHTML = previewHtml(generatedImage, '✓ AI (teaser)');
     }
   }
   // Flash visivo
