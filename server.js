@@ -1,54 +1,163 @@
 /**
- * Com.Art.Pro — server con admin, storage JSON e upload.
- * Env richieste in prod:
+ * Com.Art.Pro — server con admin, Postgres (Neon) e upload.
+ * Env:
+ *   DATABASE_URL     Neon postgres connection string
  *   ADMIN_PASSWORD   password amministratore
- *   SESSION_SECRET   stringa random lunga (firma cookie)
- *   DATA_DIR         opzionale, default ./data (in Railway montare un Volume)
+ *   SESSION_SECRET   stringa random per firmare i cookie
+ *   DATA_DIR         opzionale (upload dir, default ./data)
  */
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const formidable = require('formidable');
+const { Pool } = require('pg');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
 const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, 'data');
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
-const DB_FILE = path.join(DATA_DIR, 'db.json');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'comartpro2026';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-me';
 const SESSION_DAYS = 7;
 
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-if (!fs.existsSync(DB_FILE)) {
-  fs.writeFileSync(DB_FILE, JSON.stringify({
-    events: [{
-      id: 'gratteri-2026',
-      title: 'Nicola Gratteri presenta «Cartelli di Sangue»',
-      date: '2026-04-17T19:30:00',
-      location: 'Palazzo Ducale Sangiovanni, Piazza Castello 26, Alessano',
-      description: 'Il Procuratore Nicola Gratteri presenta il libro «Cartelli di Sangue» (Mondadori), dedicato alle rotte del narcotraffico. Dialoga con Federico Imperato, docente di Storia delle Relazioni Internazionali all\'Università di Bari.',
-      poster: '/public/events/gratteri.jpg',
-      pdf: '/public/events/gratteri.pdf',
-      organizers: 'Associazione Culturale NarrAzioni · Idrusa Libreria · Com.Art.Pro APS ETS',
-      sponsors: 'Martinucci · Pedone Veicoli · Demarco Autoscuola · EdilCasa · Agenzia Pedone',
-      info: 'Ingresso libero fino a esaurimento posti · Info 349.6415030',
-      createdAt: new Date().toISOString()
-    }],
-    news: [],
-    projects: [
-      { id: 'compra-alessano', name: 'CompraAlessano', tag: 'Promozione commercio', description: 'Campagna permanente per valorizzare il commercio di prossimità.', status: 'Attivo', color: 'brand' },
-      { id: 'fiera-agro', name: 'Fiera Agroartigianale', tag: 'Evento annuale', description: 'Vetrina delle eccellenze agroalimentari e artigianali del territorio.', status: 'Ricorrente', color: 'gold' },
-      { id: 'natale-comartpro', name: 'Natale ComArtPro', tag: 'Eventi stagionali', description: 'Calendario di iniziative natalizie che anima il centro di Alessano.', status: 'Ricorrente', color: 'red' },
-      { id: 'ledwall', name: 'Led Wall ComArtPro', tag: 'Comunicazione', description: 'Infrastruttura di comunicazione condivisa con portale dedicato ai soci.', status: 'In valutazione', color: 'ink', link: 'https://comartpro-ledwall-production.up.railway.app/' }
-    ]
-  }, null, 2));
+
+if (!process.env.DATABASE_URL) {
+  console.error('⚠️  DATABASE_URL non impostata — usa la connection string Neon');
 }
 
-// ——— DB ———
-function loadDb() { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
-function saveDb(db) { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); }
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes('localhost') ? false : { rejectUnauthorized: false }
+});
+
+// ——— MIGRATIONS + SEED ———
+async function migrate() {
+  const q = `
+    CREATE TABLE IF NOT EXISTS events (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      date TIMESTAMPTZ,
+      location TEXT,
+      description TEXT,
+      poster TEXT,
+      pdf TEXT,
+      organizers TEXT,
+      sponsors TEXT,
+      info TEXT,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      updated_at TIMESTAMPTZ DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS news (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      date TIMESTAMPTZ,
+      author TEXT,
+      excerpt TEXT,
+      body TEXT,
+      image TEXT,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      updated_at TIMESTAMPTZ DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS projects (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      tag TEXT,
+      description TEXT,
+      status TEXT,
+      color TEXT,
+      link TEXT,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      updated_at TIMESTAMPTZ DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS members (
+      id SERIAL PRIMARY KEY,
+      appsheet_row_id TEXT UNIQUE,
+      slug TEXT UNIQUE,
+      business_name TEXT,
+      category TEXT,
+      profession TEXT,
+      address TEXT,
+      municipality TEXT,
+      phone TEXT,
+      email TEXT,
+      logo TEXT,
+      description TEXT,
+      role TEXT,
+      approved BOOLEAN DEFAULT FALSE,
+      public_consent BOOLEAN DEFAULT TRUE,
+      lat DOUBLE PRECISION,
+      lng DOUBLE PRECISION,
+      last_synced_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      updated_at TIMESTAMPTZ DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS idx_members_category ON members(category);
+    CREATE INDEX IF NOT EXISTS idx_members_municipality ON members(municipality);
+    CREATE INDEX IF NOT EXISTS idx_members_approved ON members(approved, public_consent);
+  `;
+  await pool.query(q);
+
+  // Seed da JSON legacy se presente e tabelle vuote
+  const legacy = path.join(DATA_DIR, 'db.json');
+  if (fs.existsSync(legacy)) {
+    const { rows } = await pool.query('SELECT COUNT(*)::int AS n FROM events');
+    if (rows[0].n === 0) {
+      try {
+        const db = JSON.parse(fs.readFileSync(legacy, 'utf8'));
+        for (const e of db.events || []) await upsert('events', e);
+        for (const n of db.news || []) await upsert('news', n);
+        for (const p of db.projects || []) await upsert('projects', p);
+        console.log('✓ Seed JSON legacy importato');
+      } catch (err) { console.warn('Seed skip:', err.message); }
+    }
+  } else {
+    // Seed di default: eventi e progetti iniziali
+    const { rows } = await pool.query('SELECT COUNT(*)::int AS n FROM events');
+    if (rows[0].n === 0) {
+      await upsert('events', {
+        id: 'gratteri-2026',
+        title: 'Nicola Gratteri presenta «Cartelli di Sangue»',
+        date: '2026-04-17T19:30:00',
+        location: 'Palazzo Ducale Sangiovanni, Piazza Castello 26, Alessano',
+        description: 'Il Procuratore Nicola Gratteri presenta il libro «Cartelli di Sangue» (Mondadori), dedicato alle rotte del narcotraffico. Dialoga con Federico Imperato, docente di Storia delle Relazioni Internazionali all\'Università di Bari.',
+        poster: '/public/events/gratteri.jpg',
+        pdf: '/public/events/gratteri.pdf',
+        organizers: 'Associazione Culturale NarrAzioni · Idrusa Libreria · Com.Art.Pro APS ETS',
+        sponsors: 'Martinucci · Pedone Veicoli · Demarco Autoscuola · EdilCasa · Agenzia Pedone',
+        info: 'Ingresso libero fino a esaurimento posti · Info 349.6415030'
+      });
+      for (const p of [
+        { id: 'compra-alessano', name: 'CompraAlessano', tag: 'Promozione commercio', description: 'Campagna permanente per valorizzare il commercio di prossimità.', status: 'Attivo', color: 'brand' },
+        { id: 'fiera-agro', name: 'Fiera Agroartigianale', tag: 'Evento annuale', description: 'Vetrina delle eccellenze agroalimentari e artigianali del territorio.', status: 'Ricorrente', color: 'gold' },
+        { id: 'natale-comartpro', name: 'Natale ComArtPro', tag: 'Eventi stagionali', description: 'Calendario di iniziative natalizie che anima il centro di Alessano.', status: 'Ricorrente', color: 'red' },
+        { id: 'ledwall', name: 'Led Wall ComArtPro', tag: 'Comunicazione', description: 'Infrastruttura di comunicazione condivisa con portale dedicato ai soci.', status: 'In valutazione', color: 'ink', link: 'https://comartpro-ledwall-production.up.railway.app/' }
+      ]) await upsert('projects', p);
+      console.log('✓ Seed default creato');
+    }
+  }
+}
+
+// ——— Generic upsert (whitelisted cols) ———
+const COLS = {
+  events: ['id','title','date','location','description','poster','pdf','organizers','sponsors','info'],
+  news: ['id','title','date','author','excerpt','body','image'],
+  projects: ['id','name','tag','description','status','color','link']
+};
+async function upsert(table, row) {
+  const cols = COLS[table];
+  const vals = cols.map(c => {
+    let v = row[c];
+    if (c === 'date' && v && typeof v === 'string' && v.length === 16) v = v + ':00';
+    return v ?? null;
+  });
+  const placeholders = cols.map((_,i) => `$${i+1}`).join(',');
+  const updates = cols.filter(c => c !== 'id').map(c => `${c}=EXCLUDED.${c}`).join(', ');
+  const sql = `INSERT INTO ${table} (${cols.join(',')}) VALUES (${placeholders})
+               ON CONFLICT (id) DO UPDATE SET ${updates}, updated_at=now()`;
+  await pool.query(sql, vals);
+}
 
 // ——— Session (HMAC cookie) ———
 function sign(payload) {
@@ -60,6 +169,7 @@ function verify(token) {
   if (!token || !token.includes('.')) return null;
   const [data, sig] = token.split('.');
   const expected = crypto.createHmac('sha256', SESSION_SECRET).update(data).digest('base64url');
+  if (sig.length !== expected.length) return null;
   if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
   try {
     const payload = JSON.parse(Buffer.from(data, 'base64url').toString());
@@ -83,7 +193,6 @@ const MIME = {
   '.ico':'image/x-icon','.json':'application/json; charset=utf-8',
   '.pdf':'application/pdf','.webp':'image/webp','.gif':'image/gif'
 };
-
 function json(res, status, body) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(body));
@@ -104,18 +213,17 @@ function serveFile(res, filePath) {
   });
 }
 
-// ——— Handlers ———
+// ——— API ———
 async function handleApi(req, res, url) {
-  const segs = url.pathname.split('/').filter(Boolean); // ['api', ...]
   const method = req.method;
 
-  // LOGIN
+  // Auth
   if (url.pathname === '/api/login' && method === 'POST') {
     const body = await readJsonBody(req);
     const pwd = String(body.password || '');
-    if (!crypto.timingSafeEqual(Buffer.from(pwd.padEnd(64, '.').slice(0, 64)), Buffer.from(ADMIN_PASSWORD.padEnd(64, '.').slice(0, 64)))) {
-      return json(res, 401, { error: 'Password errata' });
-    }
+    const a = Buffer.from(pwd.padEnd(64, '.').slice(0, 64));
+    const b = Buffer.from(ADMIN_PASSWORD.padEnd(64, '.').slice(0, 64));
+    if (!crypto.timingSafeEqual(a, b)) return json(res, 401, { error: 'Password errata' });
     const token = sign({ sub: 'admin', exp: Date.now() + SESSION_DAYS * 864e5 });
     res.setHeader('Set-Cookie', `session=${token}; HttpOnly; Path=/; SameSite=Strict; Max-Age=${SESSION_DAYS*86400}${process.env.NODE_ENV==='production'?'; Secure':''}`);
     return json(res, 200, { ok: true });
@@ -128,85 +236,95 @@ async function handleApi(req, res, url) {
     return json(res, 200, { admin: isAdmin(req) });
   }
 
-  // PUBLIC READ
-  if (url.pathname === '/api/events' && method === 'GET') return json(res, 200, loadDb().events);
-  if (url.pathname === '/api/news' && method === 'GET') return json(res, 200, loadDb().news);
-  if (url.pathname === '/api/projects' && method === 'GET') return json(res, 200, loadDb().projects);
+  // Public reads
+  if (url.pathname === '/api/events' && method === 'GET') {
+    const { rows } = await pool.query('SELECT * FROM events ORDER BY date DESC NULLS LAST');
+    return json(res, 200, rows);
+  }
+  if (url.pathname === '/api/news' && method === 'GET') {
+    const { rows } = await pool.query('SELECT * FROM news ORDER BY date DESC NULLS LAST');
+    return json(res, 200, rows);
+  }
+  if (url.pathname === '/api/projects' && method === 'GET') {
+    const { rows } = await pool.query('SELECT * FROM projects ORDER BY created_at ASC');
+    return json(res, 200, rows);
+  }
+  if (url.pathname === '/api/members' && method === 'GET') {
+    const q = (url.searchParams.get('q') || '').trim();
+    const cat = url.searchParams.get('category');
+    const muni = url.searchParams.get('municipality');
+    const params = [];
+    const where = ['approved = TRUE', 'public_consent = TRUE'];
+    if (q) { params.push('%' + q + '%'); where.push(`(business_name ILIKE $${params.length} OR profession ILIKE $${params.length} OR address ILIKE $${params.length})`); }
+    if (cat) { params.push(cat); where.push(`category = $${params.length}`); }
+    if (muni) { params.push(muni); where.push(`municipality = $${params.length}`); }
+    const { rows } = await pool.query(
+      `SELECT id, slug, business_name, category, profession, address, municipality, phone, email, logo, description, lat, lng
+       FROM members WHERE ${where.join(' AND ')} ORDER BY business_name`, params);
+    return json(res, 200, rows);
+  }
 
-  // ADMIN PROTECTED
+  // Admin-only
   if (!isAdmin(req)) return json(res, 401, { error: 'Non autenticato' });
 
-  // UPLOAD
   if (url.pathname === '/api/upload' && method === 'POST') {
     const form = formidable({ uploadDir: UPLOADS_DIR, keepExtensions: true, maxFileSize: 25 * 1024 * 1024 });
     form.parse(req, (err, fields, files) => {
       if (err) return json(res, 500, { error: err.message });
       const file = Array.isArray(files.file) ? files.file[0] : files.file;
       if (!file) return json(res, 400, { error: 'Nessun file' });
-      const base = path.basename(file.filepath);
-      return json(res, 200, { url: `/uploads/${base}`, name: file.originalFilename });
+      return json(res, 200, { url: `/uploads/${path.basename(file.filepath)}`, name: file.originalFilename });
     });
     return;
   }
 
-  // CRUD collections: events, news, projects
+  // CRUD events/news/projects
   const match = url.pathname.match(/^\/api\/(events|news|projects)(?:\/(.+))?$/);
   if (match) {
     const coll = match[1], id = match[2];
-    const db = loadDb();
-    const items = db[coll];
-
-    if (method === 'GET') return json(res, 200, items);
     if (method === 'POST') {
       const body = await readJsonBody(req);
-      const item = { ...body, id: body.id || crypto.randomUUID(), createdAt: new Date().toISOString() };
-      items.push(item); saveDb(db);
-      return json(res, 200, item);
+      body.id = body.id || crypto.randomUUID();
+      await upsert(coll, body);
+      const { rows } = await pool.query(`SELECT * FROM ${coll} WHERE id=$1`, [body.id]);
+      return json(res, 200, rows[0]);
     }
     if (method === 'PUT' && id) {
       const body = await readJsonBody(req);
-      const idx = items.findIndex(x => x.id === id);
-      if (idx < 0) return json(res, 404, { error: 'Non trovato' });
-      items[idx] = { ...items[idx], ...body, id, updatedAt: new Date().toISOString() };
-      saveDb(db);
-      return json(res, 200, items[idx]);
+      body.id = id;
+      await upsert(coll, body);
+      const { rows } = await pool.query(`SELECT * FROM ${coll} WHERE id=$1`, [id]);
+      return json(res, 200, rows[0]);
     }
     if (method === 'DELETE' && id) {
-      const idx = items.findIndex(x => x.id === id);
-      if (idx < 0) return json(res, 404, { error: 'Non trovato' });
-      items.splice(idx, 1); saveDb(db);
+      await pool.query(`DELETE FROM ${coll} WHERE id=$1`, [id]);
       return json(res, 200, { ok: true });
     }
   }
-
   return json(res, 404, { error: 'Route non trovata' });
 }
 
-// ——— Server ———
-http.createServer(async (req, res) => {
-  try {
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const p = url.pathname;
+// ——— Server boot ———
+async function main() {
+  try { await migrate(); }
+  catch (err) { console.error('Migration error:', err.message); }
 
-    if (p.startsWith('/api/')) return handleApi(req, res, url);
-
-    // Uploads served from DATA_DIR/uploads
-    if (p.startsWith('/uploads/')) {
-      const safe = path.join(UPLOADS_DIR, path.basename(p));
-      return serveFile(res, safe);
+  http.createServer(async (req, res) => {
+    try {
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      const p = url.pathname;
+      if (p.startsWith('/api/')) return handleApi(req, res, url);
+      if (p.startsWith('/uploads/')) return serveFile(res, path.join(UPLOADS_DIR, path.basename(p)));
+      if (p === '/admin' || p === '/admin/') return serveFile(res, path.join(ROOT, 'admin.html'));
+      let urlPath = decodeURIComponent(p);
+      if (urlPath === '/') urlPath = '/index.html';
+      const filePath = path.join(ROOT, urlPath);
+      if (!filePath.startsWith(ROOT)) { res.writeHead(403); return res.end('Forbidden'); }
+      return serveFile(res, filePath);
+    } catch (e) {
+      console.error(e);
+      res.writeHead(500); res.end('Server error');
     }
-
-    // Admin page
-    if (p === '/admin' || p === '/admin/') return serveFile(res, path.join(ROOT, 'admin.html'));
-
-    // Static
-    let urlPath = decodeURIComponent(p);
-    if (urlPath === '/') urlPath = '/index.html';
-    const filePath = path.join(ROOT, urlPath);
-    if (!filePath.startsWith(ROOT)) { res.writeHead(403); return res.end('Forbidden'); }
-    return serveFile(res, filePath);
-  } catch (e) {
-    console.error(e);
-    res.writeHead(500); res.end('Server error');
-  }
-}).listen(PORT, '0.0.0.0', () => console.log(`comartpro.it listening on 0.0.0.0:${PORT} · data: ${DATA_DIR}`));
+  }).listen(PORT, '0.0.0.0', () => console.log(`comartpro.it listening on 0.0.0.0:${PORT}`));
+}
+main();
