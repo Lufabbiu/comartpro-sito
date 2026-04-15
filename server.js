@@ -12,6 +12,7 @@ const path = require('path');
 const crypto = require('crypto');
 const formidable = require('formidable');
 const { Pool } = require('pg');
+const { runSync } = require('./sync');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -273,6 +274,18 @@ async function handleApi(req, res, url) {
   // Admin-only
   if (!isAdmin(req)) return json(res, 401, { error: 'Non autenticato' });
 
+  if (url.pathname === '/api/sync-members' && method === 'POST') {
+    try {
+      const body = await readJsonBody(req).catch(() => ({}));
+      const result = await runSync(pool, { force: !!body.force });
+      return json(res, 200, result);
+    } catch (e) { return json(res, 500, { error: e.message }); }
+  }
+  if (url.pathname === '/api/members-all' && method === 'GET') {
+    const { rows } = await pool.query('SELECT * FROM members ORDER BY business_name');
+    return json(res, 200, rows);
+  }
+
   if (url.pathname === '/api/upload' && method === 'POST') {
     const form = formidable({ uploadDir: UPLOADS_DIR, keepExtensions: true, maxFileSize: 25 * 1024 * 1024 });
     form.parse(req, (err, fields, files) => {
@@ -332,6 +345,16 @@ async function handleApi(req, res, url) {
 async function main() {
   try { await migrate(); }
   catch (err) { console.error('Migration error:', err.message); }
+
+  // Scheduled member sync every 30 min (skip in dev without DB)
+  if (process.env.DATABASE_URL) {
+    setTimeout(async () => {
+      try { await runSync(pool); } catch (e) { console.error('Sync error:', e.message); }
+    }, 10_000);
+    setInterval(async () => {
+      try { await runSync(pool); } catch (e) { console.error('Sync error:', e.message); }
+    }, 30 * 60 * 1000);
+  }
 
   http.createServer(async (req, res) => {
     try {

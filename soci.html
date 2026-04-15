@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Directory Soci — Com.Art.Pro APS ETS</title>
+<meta name="description" content="Trova commercianti, artigiani e liberi professionisti di Alessano e Montesardo iscritti a Com.Art.Pro APS ETS.">
+<link rel="icon" type="image/png" href="/public/logo.png?v=3">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<style>
+  :root{--ink:#0e1a2b;--ink-soft:#2a3a55;--paper:#f4efe4;--paper-alt:#ebe4d4;--brand:#2d7a3e;--brand-dark:#1e5a2c;--brand-soft:#4a9f6b;--gold:#c89b3c;--line:rgba(14,26,43,.12)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  img{max-width:100%;display:block}
+
+  /* NAV */
+  .nav{position:sticky;top:0;z-index:100;background:rgba(244,239,228,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem}
+  .brand{display:flex;align-items:center;gap:.8rem;text-decoration:none}
+  .brand .logo-wrap{width:48px;height:48px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+  .brand .logo-wrap img{width:100%;height:100%;object-fit:contain;padding:2px}
+  .brand .name{font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;color:var(--brand-dark)}
+  .brand .sub{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
+  .nav-links{display:flex;gap:2rem;list-style:none;align-items:center}
+  .nav-links a{text-decoration:none;font-size:.95rem;color:var(--ink-soft);font-weight:500;transition:color .2s}
+  .nav-links a:hover,.nav-links a.active{color:var(--brand-dark)}
+  .nav-cta{padding:.6rem 1.2rem;background:var(--brand);color:#fff!important;border-radius:999px;font-weight:600;font-size:.9rem}
+
+  /* HEAD */
+  .head{padding:3rem 2rem 2rem;max-width:1400px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:2rem}
+  .head .t .eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;color:var(--brand-dark);font-weight:600;padding:.4rem .9rem;background:rgba(45,122,62,.08);border-radius:999px;margin-bottom:1rem}
+  .head h1{font-family:'Fraunces',serif;font-size:clamp(2rem,4vw,3rem);line-height:1.1;letter-spacing:-.02em;font-weight:700;margin-bottom:.5rem}
+  .head h1 em{font-style:italic;color:var(--brand-dark);font-weight:600}
+  .head p{color:var(--ink-soft);max-width:50ch;font-size:1.05rem}
+  .head .count{font-family:'Fraunces',serif;font-size:3rem;color:var(--brand);font-weight:700;letter-spacing:-.03em;line-height:1}
+  .head .count small{display:block;font-family:'Inter',sans-serif;font-size:.75rem;color:var(--ink-soft);letter-spacing:.15em;text-transform:uppercase;margin-top:.4rem;font-weight:600}
+
+  /* TOOLBAR */
+  .tools{max-width:1400px;margin:0 auto;padding:0 2rem 2rem;display:grid;grid-template-columns:1.5fr 1fr 1fr auto;gap:.8rem}
+  .tools input,.tools select{padding:.8rem 1rem;border:1px solid var(--line);background:#fff;border-radius:10px;font-family:inherit;font-size:.95rem;color:var(--ink)}
+  .tools input:focus,.tools select:focus{outline:0;border-color:var(--brand)}
+  .btn-geo{padding:.8rem 1.2rem;border:1px solid var(--line);background:#fff;border-radius:10px;cursor:pointer;font-family:inherit;font-size:.9rem;font-weight:600;display:flex;align-items:center;gap:.5rem}
+  .btn-geo:hover{border-color:var(--brand);color:var(--brand-dark)}
+  .btn-geo.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+  /* LAYOUT */
+  .main{max-width:1400px;margin:0 auto;padding:0 2rem 4rem;display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+  @media(max-width:1000px){.main{grid-template-columns:1fr} .tools{grid-template-columns:1fr 1fr}}
+
+  /* LIST */
+  .list{display:grid;gap:1rem;max-height:75vh;overflow:auto;padding-right:.5rem}
+  .list::-webkit-scrollbar{width:6px}
+  .list::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  .card-s{background:#fff;border:1px solid var(--line);border-radius:14px;padding:1.2rem;display:grid;grid-template-columns:auto 1fr auto;gap:1rem;align-items:center;transition:all .2s;cursor:pointer}
+  .card-s:hover{border-color:var(--brand-soft);box-shadow:0 10px 30px rgba(14,26,43,.06);transform:translateY(-1px)}
+  .card-s.active{border-color:var(--brand);box-shadow:0 0 0 2px rgba(45,122,62,.15)}
+  .card-s .logo{width:56px;height:56px;border-radius:10px;background:var(--paper-alt);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;color:var(--brand-dark);flex-shrink:0;overflow:hidden}
+  .card-s .logo img{width:100%;height:100%;object-fit:cover}
+  .card-s h3{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:600;line-height:1.2;margin-bottom:.2rem}
+  .card-s .meta{font-size:.82rem;color:var(--ink-soft);display:flex;gap:.8rem;flex-wrap:wrap}
+  .card-s .chip{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-dark);background:rgba(45,122,62,.08);padding:.25rem .6rem;border-radius:4px;font-weight:700}
+  .card-s .dist{font-size:.72rem;color:var(--brand-dark);font-weight:600}
+
+  /* MAP */
+  #map{height:75vh;border-radius:14px;overflow:hidden;border:1px solid var(--line);position:sticky;top:6rem}
+  .maplibregl-popup-content{padding:0;border-radius:12px;overflow:hidden;box-shadow:0 12px 30px rgba(14,26,43,.15)}
+  .popup{padding:1rem;min-width:220px;font-family:'Inter',sans-serif}
+  .popup h4{font-family:'Fraunces',serif;font-size:1rem;font-weight:600;margin-bottom:.3rem}
+  .popup p{font-size:.82rem;color:var(--ink-soft);margin:0 0 .3rem}
+  .popup a{color:var(--brand-dark);text-decoration:none;font-size:.85rem;font-weight:600}
+
+  .empty{grid-column:1/-1;padding:4rem 2rem;text-align:center;color:var(--ink-soft);background:#fff;border:1px dashed var(--line);border-radius:14px}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <span class="logo-wrap"><img src="/public/logo.png?v=3" alt=""></span>
+      <div><div class="name">Com.Art.Pro</div><div class="sub">APS ETS</div></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/#associazione">Associazione</a></li>
+      <li><a href="/#categorie">Chi siamo</a></li>
+      <li><a href="/progetti.html">Progetti</a></li>
+      <li><a href="/soci.html" class="active">Soci</a></li>
+      <li><a href="/#contatti">Contatti</a></li>
+      <li><a class="nav-cta" href="/#iscrizione">Associati</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="head">
+  <div class="t">
+    <span class="eyebrow"><span style="width:6px;height:6px;background:var(--brand);border-radius:50%;display:inline-block"></span>Directory soci</span>
+    <h1>Le <em>attività</em> di Alessano e Montesardo.</h1>
+    <p>Cerca tra commercianti, artigiani e liberi professionisti iscritti a Com.Art.Pro. Filtra per categoria o zona, oppure trova le attività più vicine a te.</p>
+  </div>
+  <div class="count"><span id="count">—</span><small>Attività in directory</small></div>
+</header>
+
+<div class="tools">
+  <input type="search" id="q" placeholder="Cerca per nome, professione, indirizzo…">
+  <select id="category">
+    <option value="">Tutte le categorie</option>
+    <option value="SERVIZI">Servizi</option>
+    <option value="COMMERCIO">Commercio</option>
+    <option value="ARTIGIANATO">Artigianato</option>
+    <option value="PROFESSIONE">Professioni</option>
+  </select>
+  <select id="municipality">
+    <option value="">Tutte le zone</option>
+    <option value="Alessano">Alessano</option>
+    <option value="Montesardo">Montesardo</option>
+  </select>
+  <button class="btn-geo" id="geoBtn">📍 Vicino a me</button>
+</div>
+
+<div class="main">
+  <div class="list" id="list"></div>
+  <div id="map"></div>
+</div>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+const ALESSANO_CENTER = [18.3408, 39.8856];
+const esc = s => String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let members = [], userPos = null, map, markers = [], activeId = null;
+
+const $q = document.getElementById('q');
+const $cat = document.getElementById('category');
+const $muni = document.getElementById('municipality');
+const $geo = document.getElementById('geoBtn');
+const $list = document.getElementById('list');
+const $count = document.getElementById('count');
+
+async function loadMembers() {
+  const params = new URLSearchParams();
+  if ($q.value.trim()) params.set('q', $q.value.trim());
+  if ($cat.value) params.set('category', $cat.value);
+  if ($muni.value) params.set('municipality', $muni.value);
+  const r = await fetch('/api/members?' + params);
+  members = await r.json();
+  $count.textContent = members.length;
+  render();
+}
+
+function haversine(a, b) {
+  const toRad = x => x * Math.PI / 180;
+  const R = 6371;
+  const dLat = toRad(b[1]-a[1]), dLon = toRad(b[0]-a[0]);
+  const s = Math.sin(dLat/2)**2 + Math.cos(toRad(a[1]))*Math.cos(toRad(b[1]))*Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+function render() {
+  let items = members.slice();
+  if (userPos) {
+    items.forEach(m => { if (m.lat && m.lng) m._dist = haversine(userPos, [m.lng, m.lat]); else m._dist = Infinity; });
+    items.sort((a,b) => (a._dist ?? 99) - (b._dist ?? 99));
+  }
+  $list.innerHTML = items.length ? items.map(m => `
+    <div class="card-s ${m.id===activeId?'active':''}" data-id="${m.id}" data-lat="${m.lat||''}" data-lng="${m.lng||''}">
+      <div class="logo">${(m.business_name||'?').slice(0,2).toUpperCase()}</div>
+      <div>
+        <h3>${esc(m.business_name)}</h3>
+        <div class="meta">
+          ${m.profession?`<span class="chip">${esc(m.profession)}</span>`:''}
+          ${m.municipality?`<span>📍 ${esc(m.municipality)}</span>`:''}
+          ${m._dist!=null && m._dist!==Infinity?`<span class="dist">${m._dist.toFixed(1)} km</span>`:''}
+        </div>
+      </div>
+      <div>
+        ${m.phone?`<a href="tel:${esc(m.phone)}" style="text-decoration:none;color:var(--brand-dark);font-weight:600;font-size:.85rem">☎</a>`:''}
+      </div>
+    </div>`).join('') : '<div class="empty">Nessun socio corrispondente ai filtri.</div>';
+
+  $list.querySelectorAll('.card-s').forEach(c => c.onclick = () => {
+    activeId = c.dataset.id;
+    const lat = parseFloat(c.dataset.lat), lng = parseFloat(c.dataset.lng);
+    if (map && !isNaN(lat) && !isNaN(lng)) {
+      map.flyTo({ center: [lng, lat], zoom: 16, duration: 800 });
+    }
+    render();
+  });
+
+  updateMarkers(items);
+}
+
+function initMap() {
+  map = new maplibregl.Map({
+    container: 'map',
+    style: 'https://tiles.openfreemap.org/styles/liberty',
+    center: ALESSANO_CENTER,
+    zoom: 13
+  });
+  map.addControl(new maplibregl.NavigationControl(), 'top-right');
+}
+
+function updateMarkers(items) {
+  markers.forEach(m => m.remove());
+  markers = [];
+  items.forEach(m => {
+    if (!m.lat || !m.lng) return;
+    const el = document.createElement('div');
+    el.style.cssText = 'width:22px;height:22px;border-radius:50%;background:var(--brand);border:3px solid #fff;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.2)';
+    if (m.id === activeId) el.style.background = 'var(--gold)';
+    const popup = new maplibregl.Popup({ offset: 14, closeButton: false }).setHTML(`
+      <div class="popup">
+        <h4>${esc(m.business_name)}</h4>
+        ${m.profession?`<p>${esc(m.profession)}</p>`:''}
+        ${m.address?`<p>📍 ${esc(m.address)}</p>`:''}
+        ${m.phone?`<a href="tel:${esc(m.phone)}">☎ ${esc(m.phone)}</a>`:''}
+      </div>`);
+    const mk = new maplibregl.Marker(el).setLngLat([m.lng, m.lat]).setPopup(popup).addTo(map);
+    markers.push(mk);
+  });
+}
+
+$q.addEventListener('input', debounce(loadMembers, 300));
+$cat.addEventListener('change', loadMembers);
+$muni.addEventListener('change', loadMembers);
+$geo.addEventListener('click', () => {
+  if (!navigator.geolocation) return alert('Geolocalizzazione non supportata');
+  $geo.textContent = '⏳ Localizzazione…';
+  navigator.geolocation.getCurrentPosition(
+    p => {
+      userPos = [p.coords.longitude, p.coords.latitude];
+      $geo.textContent = '📍 Posizione attiva';
+      $geo.classList.add('active');
+      if (map) map.flyTo({ center: userPos, zoom: 14 });
+      render();
+    },
+    () => { $geo.textContent = '📍 Vicino a me'; alert('Impossibile ottenere la posizione'); },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+});
+
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+initMap();
+loadMembers();
+</script>
+</body>
+</html>

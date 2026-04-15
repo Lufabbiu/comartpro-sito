@@ -6,6 +6,7 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "csv-parse": "^6.2.1",
     "formidable": "^3.5.1",
     "pg": "^8.20.0"
   },
