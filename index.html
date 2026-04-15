@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Com.Art.Pro APS ETS — Commercianti, Artigiani e Liberi Professionisti · Alessano e Montesardo</title>
+<meta name="description" content="Com.Art.Pro APS ETS è l'associazione che unisce commercianti, artigiani e liberi professionisti di Alessano e Montesardo. Al servizio dell'ambiente e del cittadino.">
+<meta property="og:title" content="Com.Art.Pro APS ETS">
+<meta property="og:description" content="L'associazione dei commercianti, artigiani e liberi professionisti di Alessano e Montesardo.">
+<meta property="og:image" content="/public/logo.png">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/png" href="/public/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0e1a2b;
+    --ink-soft:#2a3a55;
+    --paper:#f4efe4;
+    --paper-alt:#ebe4d4;
+    --brand:#2d7a3e;
+    --brand-dark:#1e5a2c;
+    --brand-soft:#4a9f6b;
+    --gold:#c89b3c;
+    --line:rgba(14,26,43,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    color:var(--ink);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  img{max-width:100%;display:block}
+
+  /* ——— NAVBAR ——— */
+  .nav{
+    position:sticky;top:0;z-index:100;
+    background:rgba(244,239,228,.92);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    max-width:1200px;margin:0 auto;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:1rem 2rem;
+  }
+  .brand{display:flex;align-items:center;gap:.8rem;text-decoration:none}
+  .brand img{width:44px;height:44px;object-fit:contain}
+  .brand .txt{line-height:1.1}
+  .brand .name{font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;letter-spacing:-.01em;color:var(--brand-dark)}
+  .brand .sub{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
+  .nav-links{display:flex;gap:2rem;list-style:none;align-items:center}
+  .nav-links a{text-decoration:none;font-size:.95rem;color:var(--ink-soft);font-weight:500;transition:color .2s}
+  .nav-links a:hover{color:var(--brand-dark)}
+  .nav-cta{
+    padding:.6rem 1.2rem;background:var(--brand);color:#fff!important;
+    border-radius:999px;font-weight:600;font-size:.9rem;
+    transition:background .2s;
+  }
+  .nav-cta:hover{background:var(--brand-dark)}
+  .burger{display:none;background:none;border:0;cursor:pointer;font-size:1.5rem;color:var(--ink)}
+
+  /* ——— HERO ——— */
+  .hero{
+    position:relative;
+    padding:clamp(5rem,12vh,9rem) 2rem clamp(4rem,10vh,7rem);
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";position:absolute;
+    top:-200px;right:-200px;width:600px;height:600px;
+    background:radial-gradient(circle,rgba(45,122,62,.08),transparent 70%);
+    pointer-events:none;
+  }
+  .hero-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1.3fr .7fr;gap:5rem;align-items:center;position:relative}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:.6rem;
+    font-size:.78rem;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--brand-dark);font-weight:600;
+    padding:.5rem 1rem;background:rgba(45,122,62,.08);
+    border-radius:999px;margin-bottom:1.5rem;
+  }
+  .eyebrow::before{content:"";width:6px;height:6px;background:var(--brand);border-radius:50%}
+  .hero h1{
+    font-family:'Fraunces',serif;
+    font-size:clamp(2.5rem,5.5vw,4.6rem);line-height:1.02;letter-spacing:-.02em;
+    font-weight:700;margin-bottom:1.8rem;max-width:16ch;
+  }
+  .hero h1 em{font-style:italic;color:var(--brand-dark);font-weight:600}
+  .hero .lead{
+    font-size:clamp(1.1rem,1.4vw,1.3rem);color:var(--ink-soft);
+    max-width:50ch;margin-bottom:2.5rem;
+  }
+  .hero-ctas{display:flex;gap:1rem;flex-wrap:wrap}
+  .btn{
+    display:inline-flex;align-items:center;gap:.5rem;
+    padding:1rem 1.8rem;border-radius:999px;font-weight:600;
+    text-decoration:none;font-size:.98rem;
+    transition:all .2s;cursor:pointer;border:0;
+  }
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.primary:hover{background:var(--brand-dark);transform:translateY(-1px)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--brand);color:var(--brand-dark)}
+
+  .hero-visual{
+    aspect-ratio:1;
+    background:radial-gradient(circle at 30% 30%,var(--brand-soft) 0%,var(--brand) 40%,var(--brand-dark) 100%);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 30px 80px rgba(45,122,62,.25);
+    position:relative;
+    animation:float 6s ease-in-out infinite;
+  }
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .hero-visual img{width:70%;height:auto;filter:drop-shadow(0 8px 24px rgba(0,0,0,.2))}
+  .hero-visual::after{
+    content:"";position:absolute;inset:-20px;border:1px dashed rgba(45,122,62,.3);border-radius:50%;
+    animation:spin 40s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ——— STATS STRIP ——— */
+  .stats{
+    background:var(--ink);color:var(--paper);
+    padding:3rem 2rem;
+  }
+  .stats-inner{
+    max-width:1200px;margin:0 auto;
+    display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;
+  }
+  .stat{text-align:center}
+  .stat .n{font-family:'Fraunces',serif;font-size:clamp(2rem,3vw,2.8rem);font-weight:700;color:var(--brand-soft);letter-spacing:-.02em}
+  .stat .l{font-size:.8rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(244,239,228,.6);margin-top:.3rem;font-weight:500}
+
+  /* ——— SECTIONS ——— */
+  section{padding:clamp(4rem,8vh,7rem) 2rem}
+  .section-inner{max-width:1200px;margin:0 auto}
+  .section-head{margin-bottom:4rem;max-width:40rem}
+  .section-head .eyebrow{margin-bottom:1rem}
+  h2{
+    font-family:'Fraunces',serif;
+    font-size:clamp(2rem,3.8vw,3.2rem);line-height:1.1;
+    font-weight:700;letter-spacing:-.02em;margin-bottom:1.2rem;
+  }
+  h2 em{font-style:italic;color:var(--brand-dark);font-weight:600}
+  .section-head p{font-size:1.15rem;color:var(--ink-soft);max-width:55ch}
+
+  /* ——— VALORI (3 colonne) ——— */
+  .valori{background:var(--paper-alt)}
+  .valori-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem}
+  .valore{
+    background:var(--paper);padding:2.5rem 2rem;border-radius:16px;
+    border:1px solid var(--line);
+    transition:transform .3s,box-shadow .3s;
+  }
+  .valore:hover{transform:translateY(-4px);box-shadow:0 20px 50px rgba(14,26,43,.08)}
+  .valore .icon{
+    width:56px;height:56px;border-radius:14px;
+    background:var(--brand);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.4rem;margin-bottom:1.5rem;
+  }
+  .valore h3{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:600;margin-bottom:.8rem;color:var(--ink)}
+  .valore p{color:var(--ink-soft);font-size:.98rem}
+
+  /* ——— CHI SIAMO (3 categorie) ——— */
+  .categorie-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;
+  }
+  .categoria{
+    padding:2.5rem 2rem;border-radius:16px;
+    background:linear-gradient(135deg,var(--paper) 0%,var(--paper-alt) 100%);
+    border:1px solid var(--line);border-top:4px solid var(--brand);
+    position:relative;overflow:hidden;
+  }
+  .categoria:nth-child(2){border-top-color:var(--brand-soft)}
+  .categoria:nth-child(3){border-top-color:var(--gold)}
+  .categoria .num{font-family:'Fraunces',serif;font-size:3rem;color:var(--brand);opacity:.2;position:absolute;top:1rem;right:1.5rem;font-weight:700}
+  .categoria h3{font-family:'Fraunces',serif;font-size:1.5rem;font-weight:700;margin-bottom:1rem;letter-spacing:-.01em}
+  .categoria p{color:var(--ink-soft);font-size:.98rem;margin-bottom:1.5rem}
+  .categoria ul{list-style:none}
+  .categoria li{
+    padding:.5rem 0;font-size:.9rem;color:var(--ink-soft);
+    display:flex;gap:.6rem;align-items:flex-start;
+  }
+  .categoria li::before{content:"→";color:var(--brand);font-weight:700;flex-shrink:0}
+
+  /* ——— MISSIONE / CITAZIONE ——— */
+  .missione{
+    background:var(--ink);color:var(--paper);
+    position:relative;overflow:hidden;
+  }
+  .missione::before{
+    content:"";position:absolute;top:-100px;left:-100px;
+    width:400px;height:400px;
+    background:radial-gradient(circle,rgba(74,159,107,.15),transparent 70%);
+  }
+  .missione-inner{max-width:900px;margin:0 auto;text-align:center;position:relative}
+  .missione .quote-mark{
+    font-family:'Fraunces',serif;font-size:8rem;line-height:.5;
+    color:var(--brand-soft);opacity:.4;height:4rem;margin-bottom:.5rem;
+  }
+  .missione h2{color:var(--paper);font-size:clamp(1.8rem,3.4vw,2.8rem);margin-bottom:2rem}
+  .missione h2 em{color:var(--brand-soft)}
+  .missione p{color:rgba(244,239,228,.8);font-size:1.15rem;max-width:35rem;margin:0 auto}
+  .missione .sig{margin-top:3rem;font-size:.85rem;letter-spacing:.2em;text-transform:uppercase;color:var(--brand-soft);font-weight:600}
+
+  /* ——— DOCUMENTI ——— */
+  .docs{background:var(--paper-alt)}
+  .docs-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.5rem}
+  .doc{
+    display:flex;gap:1.5rem;align-items:center;
+    padding:2rem;background:var(--paper);border-radius:14px;
+    border:1px solid var(--line);text-decoration:none;color:inherit;
+    transition:all .2s;
+  }
+  .doc:hover{border-color:var(--brand);transform:translateX(4px)}
+  .doc .icon{
+    width:60px;height:60px;border-radius:12px;flex-shrink:0;
+    background:rgba(45,122,62,.1);color:var(--brand-dark);
+    display:flex;align-items:center;justify-content:center;font-size:1.6rem;
+  }
+  .doc h4{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:600;margin-bottom:.3rem}
+  .doc p{font-size:.9rem;color:var(--ink-soft)}
+  .doc .arrow{margin-left:auto;color:var(--brand);font-size:1.3rem}
+
+  /* ——— DIRETTIVO ——— */
+  .direttivo-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem;
+  }
+  .membro{
+    padding:1.8rem;background:var(--paper-alt);border-radius:14px;text-align:center;
+    border:1px solid var(--line);
+  }
+  .membro .ruolo{
+    font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--brand-dark);font-weight:700;margin-bottom:.8rem;
+  }
+  .membro .nome{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:600;color:var(--ink)}
+  .membro.placeholder{opacity:.5;border-style:dashed}
+
+  /* ——— CONTATTI ——— */
+  .contatti{background:var(--paper-alt)}
+  .contatti-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start}
+  .contatti-list{list-style:none}
+  .contatti-list li{
+    display:flex;gap:1.2rem;padding:1.3rem 0;
+    border-bottom:1px solid var(--line);align-items:center;
+  }
+  .contatti-list li:last-child{border-bottom:0}
+  .contatti-list .icon{
+    width:44px;height:44px;border-radius:10px;flex-shrink:0;
+    background:var(--brand);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+  }
+  .contatti-list .label{font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin-bottom:.2rem}
+  .contatti-list .val{font-size:1.02rem;color:var(--ink);font-weight:500}
+  .contatti-list a{text-decoration:none}
+  .contatti-list a:hover .val{color:var(--brand-dark)}
+
+  .form-box{
+    background:var(--paper);padding:2.5rem;border-radius:16px;
+    border:1px solid var(--line);
+  }
+  .form-box h3{font-family:'Fraunces',serif;font-size:1.5rem;margin-bottom:.5rem}
+  .form-box p{color:var(--ink-soft);font-size:.95rem;margin-bottom:1.8rem}
+  .field{margin-bottom:1.2rem}
+  .field label{display:block;font-size:.82rem;color:var(--ink-soft);font-weight:600;margin-bottom:.4rem;letter-spacing:.05em}
+  .field input,.field textarea,.field select{
+    width:100%;padding:.9rem 1rem;border:1px solid var(--line);
+    background:var(--paper-alt);border-radius:10px;
+    font-family:inherit;font-size:.95rem;color:var(--ink);
+    transition:border .2s;
+  }
+  .field input:focus,.field textarea:focus,.field select:focus{
+    outline:0;border-color:var(--brand);background:var(--paper);
+  }
+  .field textarea{resize:vertical;min-height:110px}
+
+  /* ——— FOOTER ——— */
+  footer{background:var(--ink);color:rgba(244,239,228,.7);padding:4rem 2rem 2rem}
+  .footer-inner{max-width:1200px;margin:0 auto}
+  .footer-top{
+    display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:3rem;
+    padding-bottom:3rem;border-bottom:1px solid rgba(244,239,228,.15);
+  }
+  .footer-brand{display:flex;gap:1rem;align-items:flex-start;margin-bottom:1.5rem}
+  .footer-brand img{width:48px;height:48px;filter:brightness(0) invert(1)}
+  .footer-brand .nm{font-family:'Fraunces',serif;font-size:1.1rem;color:var(--paper);font-weight:700;line-height:1.2}
+  .footer-brand .sb{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(244,239,228,.5);margin-top:.3rem}
+  .footer-top p{font-size:.9rem;max-width:30ch}
+  .footer-col h5{font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;color:var(--paper);font-weight:700;margin-bottom:1.2rem}
+  .footer-col ul{list-style:none}
+  .footer-col li{margin-bottom:.7rem;font-size:.92rem}
+  .footer-col a{text-decoration:none;color:rgba(244,239,228,.7);transition:color .2s}
+  .footer-col a:hover{color:var(--brand-soft)}
+  .footer-bottom{padding-top:2rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-size:.8rem;color:rgba(244,239,228,.5);letter-spacing:.05em}
+  .footer-bottom a{color:rgba(244,239,228,.7);text-decoration:none;margin-left:1.5rem}
+  .footer-bottom a:hover{color:var(--brand-soft)}
+
+  /* ——— RESPONSIVE ——— */
+  @media (max-width:900px){
+    .nav-links{display:none}
+    .burger{display:block}
+    .hero-inner{grid-template-columns:1fr;gap:3rem}
+    .hero-visual{max-width:300px;margin:0 auto}
+    .stats-inner{grid-template-columns:repeat(2,1fr);gap:1.5rem}
+    .valori-grid,.categorie-grid,.docs-grid,.contatti-grid{grid-template-columns:1fr;gap:1.5rem}
+    .footer-top{grid-template-columns:1fr;gap:2.5rem}
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <img src="/public/logo.png" alt="Com.Art.Pro">
+      <div class="txt">
+        <div class="name">Com.Art.Pro</div>
+        <div class="sub">APS ETS</div>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#associazione">Associazione</a></li>
+      <li><a href="#categorie">Chi siamo</a></li>
+      <li><a href="#missione">Missione</a></li>
+      <li><a href="#documenti">Documenti</a></li>
+      <li><a href="#contatti">Contatti</a></li>
+      <li><a class="nav-cta" href="#iscrizione">Associati</a></li>
+    </ul>
+    <button class="burger" aria-label="Menu">☰</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow">Alessano · Montesardo · since 2024</div>
+      <h1>La rete che <em>dà voce</em> alle attività del territorio.</h1>
+      <p class="lead">Com.Art.Pro APS ETS riunisce commercianti, artigiani e liberi professionisti di Alessano e Montesardo. Un'associazione al servizio dell'ambiente e del cittadino, che trasforma il lavoro di ogni giorno in valore condiviso.</p>
+      <div class="hero-ctas">
+        <a class="btn primary" href="#iscrizione">Diventa socio →</a>
+        <a class="btn ghost" href="#missione">Scopri chi siamo</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <img src="/public/logo.png" alt="Logo Com.Art.Pro">
+    </div>
+  </div>
+</header>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stats-inner">
+    <div class="stat"><div class="n">142+</div><div class="l">Soci attivi</div></div>
+    <div class="stat"><div class="n">2</div><div class="l">Comuni coinvolti</div></div>
+    <div class="stat"><div class="n">3</div><div class="l">Categorie professionali</div></div>
+    <div class="stat"><div class="n">2024</div><div class="l">Anno di fondazione</div></div>
+  </div>
+</div>
+
+<!-- VALORI -->
+<section class="valori" id="associazione">
+  <div class="section-inner">
+    <div class="section-head">
+      <div class="eyebrow">I nostri valori</div>
+      <h2>Un'associazione <em>costruita insieme</em>, ogni giorno.</h2>
+      <p>Com.Art.Pro nasce dall'incontro di chi fa impresa sul territorio e crede in una comunità economica più forte, più informata e più unita.</p>
+    </div>
+    <div class="valori-grid">
+      <div class="valore">
+        <div class="icon">◆</div>
+        <h3>Comunità</h3>
+        <p>Mettere in rete le attività locali per creare opportunità condivise, rafforzare l'identità del territorio e valorizzare chi ogni giorno lo anima.</p>
+      </div>
+      <div class="valore">
+        <div class="icon">✦</div>
+        <h3>Servizio</h3>
+        <p>Un'associazione al servizio dei soci e dei cittadini: informazione, rappresentanza, iniziative concrete per il commercio, l'artigianato e le professioni.</p>
+      </div>
+      <div class="valore">
+        <div class="icon">◈</div>
+        <h3>Ambiente</h3>
+        <p>Promuovere uno sviluppo economico rispettoso dell'ambiente e del patrimonio del Basso Salento, con progetti utili alla collettività.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORIE -->
+<section id="categorie">
+  <div class="section-inner">
+    <div class="section-head">
+      <div class="eyebrow">Chi siamo</div>
+      <h2>Tre categorie, <em>un solo territorio</em>.</h2>
+      <p>Commercianti, artigiani e liberi professionisti: tre mondi che si intrecciano nella vita quotidiana dei nostri paesi. Com.Art.Pro li unisce in un'unica voce.</p>
+    </div>
+    <div class="categorie-grid">
+      <div class="categoria">
+        <div class="num">01</div>
+        <h3>Commercianti</h3>
+        <p>Le attività che animano ogni giorno le vie e le piazze di Alessano e Montesardo.</p>
+        <ul>
+          <li>Negozi e botteghe</li>
+          <li>Bar, ristoranti, pasticcerie</li>
+          <li>Servizi alla persona</li>
+          <li>Ricettività e accoglienza</li>
+        </ul>
+      </div>
+      <div class="categoria">
+        <div class="num">02</div>
+        <h3>Artigiani</h3>
+        <p>Il saper fare locale, custodito e tramandato da chi lavora con le mani e con passione.</p>
+        <ul>
+          <li>Edilizia e costruzioni</li>
+          <li>Impiantistica e manutenzione</li>
+          <li>Lavorazioni artigiane tradizionali</li>
+          <li>Creatività e design</li>
+        </ul>
+      </div>
+      <div class="categoria">
+        <div class="num">03</div>
+        <h3>Liberi Professionisti</h3>
+        <p>Competenze e studi al servizio di cittadini, imprese e istituzioni del territorio.</p>
+        <ul>
+          <li>Area medica e sanitaria</li>
+          <li>Area legale e fiscale</li>
+          <li>Tecnici e progettisti</li>
+          <li>Consulenza e formazione</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MISSIONE -->
+<section class="missione" id="missione">
+  <div class="missione-inner">
+    <div class="quote-mark">"</div>
+    <h2>Al <em>servizio</em> dell'ambiente e del <em>cittadino</em>.</h2>
+    <p>Non solo tutela degli interessi professionali, ma un'associazione che si fa carico del territorio in cui opera: promuovendo iniziative di utilità collettiva, collaborando con le istituzioni, costruendo insieme il futuro del Basso Salento.</p>
+    <div class="sig">— Com.Art.Pro APS ETS</div>
+  </div>
+</section>
+
+<!-- DOCUMENTI -->
+<section class="docs" id="documenti">
+  <div class="section-inner">
+    <div class="section-head">
+      <div class="eyebrow">Trasparenza</div>
+      <h2>Documenti <em>ufficiali</em>.</h2>
+      <p>Tutti gli atti che regolano la vita dell'associazione sono pubblici e consultabili.</p>
+    </div>
+    <div class="docs-grid">
+      <a class="doc" href="/public/statuto.pdf" target="_blank" rel="noopener">
+        <div class="icon">📄</div>
+        <div>
+          <h4>Statuto</h4>
+          <p>Statuto dell'associazione — aggiornato 30 giugno</p>
+        </div>
+        <div class="arrow">↗</div>
+      </a>
+      <a class="doc" href="#contatti">
+        <div class="icon">✉</div>
+        <div>
+          <h4>Atto costitutivo</h4>
+          <p>Disponibile su richiesta presso la segreteria</p>
+        </div>
+        <div class="arrow">→</div>
+      </a>
+      <a class="doc" href="#contatti">
+        <div class="icon">⚖</div>
+        <div>
+          <h4>Bilanci e rendiconti</h4>
+          <p>Rendicontazione annuale delle attività associative</p>
+        </div>
+        <div class="arrow">→</div>
+      </a>
+      <a class="doc" href="#contatti">
+        <div class="icon">◉</div>
+        <div>
+          <h4>Iscrizione RUNTS</h4>
+          <p>Registro Unico Nazionale del Terzo Settore</p>
+        </div>
+        <div class="arrow">→</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- CONTATTI -->
+<section class="contatti" id="contatti">
+  <div class="section-inner">
+    <div class="section-head">
+      <div class="eyebrow">Scrivici</div>
+      <h2>Contatti e <em>sede</em>.</h2>
+      <p>Per informazioni, adesioni e collaborazioni siamo sempre a disposizione.</p>
+    </div>
+    <div class="contatti-grid">
+      <ul class="contatti-list">
+        <li>
+          <div class="icon">⌂</div>
+          <div><div class="label">Sede</div><div class="val">Alessano (LE) · Montesardo</div></div>
+        </li>
+        <li>
+          <a href="mailto:info@comartpro.it">
+            <div style="display:flex;gap:1.2rem;align-items:center">
+              <div class="icon">@</div>
+              <div><div class="label">Email</div><div class="val">info@comartpro.it</div></div>
+            </div>
+          </a>
+        </li>
+        <li>
+          <div class="icon">☎</div>
+          <div><div class="label">Telefono</div><div class="val">Disponibile in sede</div></div>
+        </li>
+        <li>
+          <div class="icon">⌘</div>
+          <div><div class="label">Forma giuridica</div><div class="val">Associazione di Promozione Sociale · Ente del Terzo Settore</div></div>
+        </li>
+      </ul>
+
+      <div class="form-box" id="iscrizione">
+        <h3>Diventa socio</h3>
+        <p>Lascia i tuoi dati: la segreteria ti ricontatterà per completare l'iscrizione.</p>
+        <form onsubmit="event.preventDefault();alert('Form dimostrativo — integrare backend')">
+          <div class="field"><label>Nome e cognome</label><input type="text" required></div>
+          <div class="field"><label>Email</label><input type="email" required></div>
+          <div class="field"><label>Categoria</label>
+            <select required>
+              <option value="">Seleziona…</option>
+              <option>Commerciante</option>
+              <option>Artigiano</option>
+              <option>Libero professionista</option>
+            </select>
+          </div>
+          <div class="field"><label>Messaggio</label><textarea placeholder="Raccontaci brevemente la tua attività"></textarea></div>
+          <button type="submit" class="btn primary" style="width:100%;justify-content:center">Invia richiesta</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand">
+          <img src="/public/logo.png" alt="Com.Art.Pro">
+          <div>
+            <div class="nm">Com.Art.Pro</div>
+            <div class="sb">APS ETS</div>
+          </div>
+        </div>
+        <p>Commercianti, Artigiani e Liberi Professionisti di Alessano e Montesardo, al servizio dell'ambiente e del cittadino.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Associazione</h5>
+        <ul>
+          <li><a href="#associazione">I nostri valori</a></li>
+          <li><a href="#categorie">Chi siamo</a></li>
+          <li><a href="#missione">Missione</a></li>
+          <li><a href="#documenti">Documenti</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Servizi</h5>
+        <ul>
+          <li><a href="#iscrizione">Diventa socio</a></li>
+          <li><a href="#">Directory soci</a> <span style="font-size:.7rem;opacity:.6">· in arrivo</span></li>
+          <li><a href="/ledwall">Progetto Led Wall</a></li>
+          <li><a href="#contatti">Contatti</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Legale</h5>
+        <ul>
+          <li><a href="/public/statuto.pdf" target="_blank">Statuto</a></li>
+          <li><a href="#">Privacy policy</a></li>
+          <li><a href="#">Cookie policy</a></li>
+          <li><a href="#">Codice fiscale</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 Com.Art.Pro APS ETS · Tutti i diritti riservati</div>
+      <div>
+        <a href="#">Privacy</a>
+        <a href="#">Cookie</a>
+        <a href="mailto:info@comartpro.it">info@comartpro.it</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // mobile menu
+  const burger=document.querySelector('.burger');
+  const links=document.querySelector('.nav-links');
+  burger?.addEventListener('click',()=>{
+    links.style.display=links.style.display==='flex'?'none':'flex';
+    links.style.position='absolute';
+    links.style.top='100%';links.style.left='0';links.style.right='0';
+    links.style.background='var(--paper)';
+    links.style.flexDirection='column';
+    links.style.padding='1.5rem 2rem';
+    links.style.borderBottom='1px solid var(--line)';
+  });
+</script>
+</body>
+</html>
