@@ -480,14 +480,19 @@ function colorFor(c) {
 }
 
 /* ——— AI draft modal ——— */
-window.openAI = function(type) {
+window.openAI = async function(type) {
   const labels = { project:'progetto', event:'evento', news:'notizia' };
+  // Check config first
+  let aiStatus;
+  try { aiStatus = await api('/api/ai/status'); } catch { aiStatus = { configured: false }; }
+
   const modal = document.createElement('div');
   modal.className = 'modal-bg';
   modal.innerHTML = `
     <div class="modal">
       <h3><span class="spark">✨</span> Genera bozza ${labels[type]}</h3>
       <p class="sub">Fornisci testo, un'immagine, un link o qualsiasi altra fonte. L'AI produrrà una bozza editabile che potrai poi ritoccare.</p>
+      ${!aiStatus.configured ? `<div class="alert err" style="margin-bottom:1.5rem">⚠️ <strong>OPENAI_API_KEY non configurata.</strong> Aggiungi la variabile d'ambiente su Railway → Variables, poi attendi il redeploy.</div>` : `<div style="margin-bottom:1rem;font-size:.78rem;color:var(--ink-soft);letter-spacing:.05em">Modello attivo: <code>${esc(aiStatus.model)}</code></div>`}
       <div class="field">
         <label>Descrizione / idea di base</label>
         <textarea id="aiText" rows="4" placeholder="Es: convegno con il procuratore Gratteri sul narcotraffico, si terrà al Palazzo Ducale il 17 aprile alle 19:30, organizzato con NarrAzioni e Idrusa Libreria..."></textarea>

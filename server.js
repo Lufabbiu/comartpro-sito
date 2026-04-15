@@ -287,12 +287,21 @@ async function handleApi(req, res, url) {
       return json(res, 200, result);
     } catch (e) { return json(res, 500, { error: e.message }); }
   }
+  if (url.pathname === '/api/ai/status' && method === 'GET') {
+    return json(res, 200, {
+      configured: !!process.env.OPENAI_API_KEY,
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini'
+    });
+  }
   if (url.pathname === '/api/ai/draft' && method === 'POST') {
     try {
       const body = await readJsonBody(req);
       const result = await generateDraft(body);
       return json(res, 200, result);
-    } catch (e) { return json(res, 500, { error: e.message }); }
+    } catch (e) {
+      console.error('[AI draft error]', e.message, e.stack);
+      return json(res, 500, { error: e.message });
+    }
   }
   if (url.pathname === '/api/ai/image' && method === 'POST') {
     try {
@@ -300,7 +309,10 @@ async function handleApi(req, res, url) {
       if (!body.prompt) return json(res, 400, { error: 'prompt richiesto' });
       const result = await generateImage(body.prompt);
       return json(res, 200, result);
-    } catch (e) { return json(res, 500, { error: e.message }); }
+    } catch (e) {
+      console.error('[AI image error]', e.message, e.stack);
+      return json(res, 500, { error: e.message });
+    }
   }
 
   if (url.pathname === '/api/members-stats' && method === 'GET') {
