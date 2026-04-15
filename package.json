@@ -1,7 +1,10 @@
 {
   "name": "comartpro-sito",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": { "start": "node server.js" },
+  "dependencies": {
+    "formidable": "^3.5.1"
+  },
   "engines": { "node": ">=18" }
 }
