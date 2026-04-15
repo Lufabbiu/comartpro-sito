@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progetti e iniziative — Com.Art.Pro APS ETS</title>
+<meta name="description" content="I progetti attivi di Com.Art.Pro APS ETS: CompraAlessano, Fiera Agroartigianale, Natale ComArtPro, Led Wall, convegni e ospitate.">
+<link rel="icon" type="image/png" href="/public/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0e1a2b;--ink-soft:#2a3a55;
+    --paper:#f4efe4;--paper-alt:#ebe4d4;
+    --brand:#2d7a3e;--brand-dark:#1e5a2c;--brand-soft:#4a9f6b;
+    --gold:#c89b3c;--line:rgba(14,26,43,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);font-family:'Inter',sans-serif;color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  img{max-width:100%;display:block}
+
+  /* NAV (shared) */
+  .nav{position:sticky;top:0;z-index:100;background:rgba(244,239,228,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem}
+  .brand{display:flex;align-items:center;gap:.8rem;text-decoration:none}
+  .brand img{width:44px;height:44px;object-fit:contain}
+  .brand .name{font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;color:var(--brand-dark)}
+  .brand .sub{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
+  .nav-links{display:flex;gap:2rem;list-style:none;align-items:center}
+  .nav-links a{text-decoration:none;font-size:.95rem;color:var(--ink-soft);font-weight:500;transition:color .2s}
+  .nav-links a:hover,.nav-links a.active{color:var(--brand-dark)}
+  .nav-cta{padding:.6rem 1.2rem;background:var(--brand);color:#fff!important;border-radius:999px;font-weight:600;font-size:.9rem}
+  .nav-cta:hover{background:var(--brand-dark)}
+
+  /* PAGE HEAD */
+  .page-head{padding:clamp(4rem,10vh,7rem) 2rem 4rem;position:relative;overflow:hidden}
+  .page-head::before{content:"";position:absolute;top:-150px;left:-150px;width:500px;height:500px;background:radial-gradient(circle,rgba(45,122,62,.08),transparent 70%)}
+  .page-head-inner{max-width:1200px;margin:0 auto;position:relative}
+  .eyebrow{display:inline-flex;align-items:center;gap:.6rem;font-size:.78rem;letter-spacing:.2em;text-transform:uppercase;color:var(--brand-dark);font-weight:600;padding:.5rem 1rem;background:rgba(45,122,62,.08);border-radius:999px;margin-bottom:1.5rem}
+  .eyebrow::before{content:"";width:6px;height:6px;background:var(--brand);border-radius:50%}
+  .page-head h1{font-family:'Fraunces',serif;font-size:clamp(2.4rem,5vw,4rem);line-height:1.05;letter-spacing:-.02em;font-weight:700;max-width:22ch;margin-bottom:1.5rem}
+  .page-head h1 em{font-style:italic;color:var(--brand-dark);font-weight:600}
+  .page-head p{font-size:1.15rem;color:var(--ink-soft);max-width:55ch}
+
+  /* SECTION */
+  section{padding:clamp(3rem,6vh,5rem) 2rem}
+  .section-inner{max-width:1200px;margin:0 auto}
+  .section-title{margin-bottom:3rem;display:flex;align-items:baseline;justify-content:space-between;gap:2rem;flex-wrap:wrap}
+  .section-title h2{font-family:'Fraunces',serif;font-size:clamp(1.8rem,3vw,2.4rem);font-weight:700;letter-spacing:-.01em}
+  .section-title .count{font-size:.8rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+
+  /* PROGETTI GRID */
+  .projects{display:grid;grid-template-columns:repeat(2,1fr);gap:2rem}
+  .project{
+    background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden;
+    transition:transform .3s,box-shadow .3s;
+    display:flex;flex-direction:column;
+  }
+  .project:hover{transform:translateY(-4px);box-shadow:0 20px 50px rgba(14,26,43,.08)}
+  .project .cover{
+    aspect-ratio:16/10;
+    background:linear-gradient(135deg,var(--brand-soft),var(--brand) 50%,var(--brand-dark));
+    display:flex;align-items:center;justify-content:center;color:#fff;
+    font-family:'Fraunces',serif;font-size:3rem;font-weight:700;letter-spacing:-.03em;
+    position:relative;overflow:hidden;
+  }
+  .project .cover::before{
+    content:"";position:absolute;inset:0;
+    background:radial-gradient(circle at 20% 20%,rgba(255,255,255,.15),transparent 50%);
+  }
+  .project:nth-child(2) .cover{background:linear-gradient(135deg,#d4a84a,var(--gold) 50%,#a8752a)}
+  .project:nth-child(3) .cover{background:linear-gradient(135deg,#b8372e,#8a2318 50%,#5a1810)}
+  .project:nth-child(4) .cover{background:linear-gradient(135deg,#2a3a55,var(--ink) 50%,#000)}
+  .project .body{padding:2rem;display:flex;flex-direction:column;flex:1}
+  .project .tag{
+    display:inline-block;font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;
+    color:var(--brand-dark);background:rgba(45,122,62,.1);
+    padding:.3rem .7rem;border-radius:4px;font-weight:700;margin-bottom:1rem;align-self:flex-start;
+  }
+  .project:nth-child(2) .tag{color:#8a6a20;background:rgba(200,155,60,.15)}
+  .project:nth-child(3) .tag{color:#8a2318;background:rgba(184,55,46,.1)}
+  .project:nth-child(4) .tag{color:var(--ink);background:rgba(14,26,43,.08)}
+  .project h3{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;margin-bottom:.8rem;letter-spacing:-.01em}
+  .project p{color:var(--ink-soft);font-size:.98rem;margin-bottom:1.5rem;flex:1}
+  .project .meta{
+    display:flex;gap:1.5rem;margin-bottom:1.5rem;
+    padding:1rem 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  }
+  .project .meta div{flex:1}
+  .project .meta .k{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin-bottom:.2rem}
+  .project .meta .v{font-size:.92rem;font-weight:600;color:var(--ink)}
+  .project .cta{display:inline-flex;align-items:center;gap:.5rem;color:var(--brand-dark);font-weight:600;text-decoration:none;font-size:.95rem;align-self:flex-start}
+  .project .cta:hover{gap:.8rem}
+
+  /* EVENTS */
+  .events{background:var(--paper-alt)}
+  .events-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem}
+  .event{
+    background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    display:flex;flex-direction:column;
+  }
+  .event .poster{
+    aspect-ratio:3/4;background:linear-gradient(180deg,var(--ink),#1a2942);
+    display:flex;align-items:center;justify-content:center;
+    color:rgba(244,239,228,.4);font-size:.8rem;letter-spacing:.2em;text-transform:uppercase;
+    position:relative;
+  }
+  .event .poster.featured{
+    background:
+      linear-gradient(180deg,rgba(14,26,43,.85),rgba(14,26,43,.6) 50%,rgba(14,26,43,.95)),
+      linear-gradient(135deg,#3a2a1a,#1a1a2a);
+  }
+  .event .poster .date-badge{
+    position:absolute;top:1rem;right:1rem;
+    background:var(--brand);color:#fff;
+    padding:.5rem .8rem;border-radius:8px;text-align:center;
+    min-width:60px;
+  }
+  .event .poster .date-badge .d{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;line-height:1}
+  .event .poster .date-badge .m{font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;margin-top:.1rem;opacity:.9}
+  .event .poster .featured-txt{position:absolute;bottom:1.5rem;left:1.5rem;right:1.5rem;color:var(--paper);font-family:'Fraunces',serif;font-size:1.3rem;line-height:1.2;font-weight:600}
+  .event .info{padding:1.3rem;flex:1;display:flex;flex-direction:column;gap:.6rem}
+  .event .info h4{font-family:'Fraunces',serif;font-size:1.15rem;font-weight:600;line-height:1.3}
+  .event .info .when{font-size:.82rem;color:var(--brand-dark);font-weight:600;display:flex;align-items:center;gap:.4rem}
+  .event .info p{font-size:.9rem;color:var(--ink-soft);line-height:1.5;flex:1}
+  .event .info .tag{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-soft);font-weight:700;align-self:flex-start;padding:.25rem .55rem;background:var(--paper-alt);border-radius:4px}
+
+  /* EMPTY / ADMIN HINT */
+  .admin-hint{
+    margin-top:3rem;padding:2rem;border-radius:14px;
+    background:rgba(45,122,62,.05);border:1px dashed var(--brand-soft);
+    display:flex;gap:1.5rem;align-items:center;
+  }
+  .admin-hint .ico{font-size:1.8rem;color:var(--brand)}
+  .admin-hint h4{font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:.3rem;color:var(--ink)}
+  .admin-hint p{font-size:.9rem;color:var(--ink-soft);margin:0}
+  .admin-hint a{color:var(--brand-dark);font-weight:600}
+
+  /* FOOTER */
+  footer{background:var(--ink);color:rgba(244,239,228,.7);padding:3rem 2rem 2rem;margin-top:4rem}
+  .footer-inner{max-width:1200px;margin:0 auto;text-align:center}
+  .footer-inner p{font-size:.85rem;letter-spacing:.05em}
+  .footer-inner a{color:var(--brand-soft);text-decoration:none;margin:0 1rem}
+
+  @media (max-width:900px){
+    .nav-links{display:none}
+    .projects{grid-template-columns:1fr}
+    .events-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <img src="/public/logo.png" alt="Com.Art.Pro">
+      <div><div class="name">Com.Art.Pro</div><div class="sub">APS ETS</div></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/#associazione">Associazione</a></li>
+      <li><a href="/#categorie">Chi siamo</a></li>
+      <li><a href="progetti.html" class="active">Progetti</a></li>
+      <li><a href="/#documenti">Documenti</a></li>
+      <li><a href="/#contatti">Contatti</a></li>
+      <li><a class="nav-cta" href="/#iscrizione">Associati</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="page-head">
+  <div class="page-head-inner">
+    <div class="eyebrow">Le nostre iniziative</div>
+    <h1>Progetti, eventi e <em>presenza sul territorio</em>.</h1>
+    <p>Com.Art.Pro non è solo rappresentanza: è un'associazione che costruisce iniziative concrete per Alessano, Montesardo e il Basso Salento. Dalla promozione del commercio locale agli eventi culturali, fino ai progetti di comunicazione e servizio pubblico.</p>
+  </div>
+</header>
+
+<!-- PROGETTI ATTIVI -->
+<section>
+  <div class="section-inner">
+    <div class="section-title">
+      <h2>Progetti attivi</h2>
+      <span class="count">04 iniziative</span>
+    </div>
+    <div class="projects">
+
+      <div class="project">
+        <div class="cover">C.A</div>
+        <div class="body">
+          <span class="tag">Promozione commercio</span>
+          <h3>CompraAlessano</h3>
+          <p>Campagna permanente per valorizzare il commercio di prossimità. Invita residenti e visitatori a scegliere le attività locali, rafforzando l'economia del paese e il legame tra chi vende e chi acquista.</p>
+          <div class="meta">
+            <div><div class="k">Tipologia</div><div class="v">Campagna territoriale</div></div>
+            <div><div class="k">Stato</div><div class="v" style="color:var(--brand-dark)">● Attivo</div></div>
+          </div>
+          <a class="cta" href="#">Scopri l'iniziativa →</a>
+        </div>
+      </div>
+
+      <div class="project">
+        <div class="cover">F.A</div>
+        <div class="body">
+          <span class="tag">Evento annuale</span>
+          <h3>Fiera Agroartigianale</h3>
+          <p>Vetrina delle eccellenze agroalimentari e artigianali del territorio. Un appuntamento che riunisce produttori, artigiani e pubblico in una giornata dedicata ai sapori e al saper fare del Basso Salento.</p>
+          <div class="meta">
+            <div><div class="k">Tipologia</div><div class="v">Fiera</div></div>
+            <div><div class="k">Stato</div><div class="v" style="color:var(--brand-dark)">● Ricorrente</div></div>
+          </div>
+          <a class="cta" href="#">Scopri l'iniziativa →</a>
+        </div>
+      </div>
+
+      <div class="project">
+        <div class="cover">N.C</div>
+        <div class="body">
+          <span class="tag">Eventi stagionali</span>
+          <h3>Natale ComArtPro</h3>
+          <p>Il calendario di iniziative natalizie che anima il centro di Alessano nel periodo delle festività: mercatini, luminarie, eventi per famiglie, promozioni coordinate tra le attività socie.</p>
+          <div class="meta">
+            <div><div class="k">Periodo</div><div class="v">Dicembre – Gennaio</div></div>
+            <div><div class="k">Stato</div><div class="v" style="color:var(--brand-dark)">● Ricorrente</div></div>
+          </div>
+          <a class="cta" href="#">Scopri l'iniziativa →</a>
+        </div>
+      </div>
+
+      <div class="project">
+        <div class="cover">L.W</div>
+        <div class="body">
+          <span class="tag">Comunicazione</span>
+          <h3>Led Wall ComArtPro</h3>
+          <p>Un'infrastruttura di comunicazione condivisa: un Led Wall esterno gestito dall'associazione, con portale dedicato ai soci e quota riservata a comunicazioni di pubblica utilità. In fase di valutazione assembleare.</p>
+          <div class="meta">
+            <div><div class="k">Fase</div><div class="v">Proposta</div></div>
+            <div><div class="k">Stato</div><div class="v" style="color:var(--gold)">● In valutazione</div></div>
+          </div>
+          <a class="cta" href="https://comartpro-ledwall-production.up.railway.app/" target="_blank" rel="noopener">Vedi il progetto ↗</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- CONVEGNI E OSPITATE -->
+<section class="events">
+  <div class="section-inner">
+    <div class="section-title">
+      <h2>Convegni e ospitate</h2>
+      <span class="count">Prossimi appuntamenti</span>
+    </div>
+
+    <div class="events-grid">
+
+      <div class="event">
+        <div class="poster featured">
+          <div class="date-badge">
+            <div class="d">17</div>
+            <div class="m">Apr</div>
+          </div>
+          <div class="featured-txt">Incontro con il Procuratore<br>Nicola Gratteri</div>
+        </div>
+        <div class="info">
+          <span class="tag">Convegno · Ospitata</span>
+          <h4>Serata con il Procuratore Nicola Gratteri</h4>
+          <div class="when">📅 17 aprile 2026</div>
+          <p>Ospite d'eccezione per una serata di confronto pubblico su legalità, giustizia e cultura civica. Un appuntamento aperto alla cittadinanza, promosso da Com.Art.Pro APS ETS.</p>
+        </div>
+      </div>
+
+      <div class="event" style="opacity:.6">
+        <div class="poster">
+          <div class="featured-txt" style="color:rgba(244,239,228,.5);font-size:1rem">Prossimo evento</div>
+        </div>
+        <div class="info">
+          <span class="tag">In programmazione</span>
+          <h4>Nuovi appuntamenti</h4>
+          <div class="when">📅 Date in definizione</div>
+          <p>Il calendario 2026 è in aggiornamento. Seguici per scoprire i prossimi convegni, le ospitate e gli incontri sul territorio.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="admin-hint">
+      <div class="ico">🔐</div>
+      <div>
+        <h4>Area riservata eventi</h4>
+        <p>L'area di gestione eventi (caricamento locandine, date, descrizioni) sarà disponibile a breve per il direttivo. <a href="/#contatti">Contatta la segreteria</a> per segnalare un evento.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <p>Com.Art.Pro APS ETS · Alessano (LE) · <a href="/">Home</a> · <a href="/#contatti">Contatti</a> · <a href="/public/statuto.pdf">Statuto</a></p>
+    <p style="margin-top:1rem;opacity:.6">© 2026 · Tutti i diritti riservati</p>
+  </div>
+</footer>
+
+</body>
+</html>
