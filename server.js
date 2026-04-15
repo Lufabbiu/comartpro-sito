@@ -12,7 +12,7 @@ const path = require('path');
 const crypto = require('crypto');
 const formidable = require('formidable');
 const { Pool } = require('pg');
-const { runSync } = require('./sync');
+const { runSync, geocodePending } = require('./sync');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -276,10 +276,25 @@ async function handleApi(req, res, url) {
 
   if (url.pathname === '/api/sync-members' && method === 'POST') {
     try {
-      const body = await readJsonBody(req).catch(() => ({}));
-      const result = await runSync(pool, { force: !!body.force });
+      const result = await runSync(pool);
       return json(res, 200, result);
     } catch (e) { return json(res, 500, { error: e.message }); }
+  }
+  if (url.pathname === '/api/geocode-pending' && method === 'POST') {
+    try {
+      const result = await geocodePending(pool, 50);
+      return json(res, 200, result);
+    } catch (e) { return json(res, 500, { error: e.message }); }
+  }
+  if (url.pathname === '/api/members-stats' && method === 'GET') {
+    const { rows } = await pool.query(`
+      SELECT
+        COUNT(*)::int AS total,
+        COUNT(*) FILTER (WHERE approved=TRUE AND public_consent=TRUE)::int AS public,
+        COUNT(*) FILTER (WHERE approved=TRUE AND public_consent=TRUE AND lat IS NOT NULL)::int AS geocoded,
+        COUNT(*) FILTER (WHERE approved=FALSE)::int AS not_approved
+      FROM members`);
+    return json(res, 200, rows[0]);
   }
   if (url.pathname === '/api/members-all' && method === 'GET') {
     const { rows } = await pool.query('SELECT * FROM members ORDER BY business_name');
@@ -346,14 +361,12 @@ async function main() {
   try { await migrate(); }
   catch (err) { console.error('Migration error:', err.message); }
 
-  // Scheduled member sync every 30 min (skip in dev without DB)
+  // Sync + geocoding
   if (process.env.DATABASE_URL) {
-    setTimeout(async () => {
-      try { await runSync(pool); } catch (e) { console.error('Sync error:', e.message); }
-    }, 10_000);
-    setInterval(async () => {
-      try { await runSync(pool); } catch (e) { console.error('Sync error:', e.message); }
-    }, 30 * 60 * 1000);
+    setTimeout(() => runSync(pool).catch(e => console.error('Sync error:', e.message)), 5_000);
+    setInterval(() => runSync(pool).catch(e => console.error('Sync error:', e.message)), 30 * 60 * 1000);
+    // Geocoding continuo: ogni 3 min prova a geocodificare 50 pending
+    setInterval(() => geocodePending(pool, 50).catch(e => console.error('Geocode error:', e.message)), 3 * 60 * 1000);
   }
 
   http.createServer(async (req, res) => {
