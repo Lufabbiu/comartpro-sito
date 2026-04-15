@@ -84,6 +84,19 @@
 
   .empty{text-align:center;padding:3rem;color:var(--ink-soft);background:var(--paper-alt);border-radius:12px}
 
+  /* AI Modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(14,26,43,.6);backdrop-filter:blur(6px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:2rem;overflow-y:auto}
+  .modal{background:#fff;border-radius:18px;max-width:600px;width:100%;padding:2rem;box-shadow:0 30px 80px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto}
+  .modal h3{font-family:'Fraunces',serif;font-size:1.5rem;margin-bottom:.4rem;display:flex;align-items:center;gap:.6rem}
+  .modal h3 .spark{background:linear-gradient(135deg,#7b4fbf,#b8372e);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .modal .sub{color:var(--ink-soft);font-size:.9rem;margin-bottom:1.5rem}
+  .modal .modal-actions{display:flex;gap:.8rem;margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--line)}
+  .btn.ai{background:linear-gradient(135deg,#7b4fbf,#b8372e);color:#fff;border:0}
+  .btn.ai:hover{filter:brightness(1.1);transform:translateY(-1px)}
+  .ai-trigger{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;background:linear-gradient(135deg,rgba(123,79,191,.1),rgba(184,55,46,.1));color:#7b4fbf;border:1px solid rgba(123,79,191,.2);border-radius:999px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+  .ai-trigger:hover{background:linear-gradient(135deg,rgba(123,79,191,.2),rgba(184,55,46,.2))}
+  .form-card h3{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+
   @media(max-width:700px){
     .form-row{grid-template-columns:1fr}
     .item{grid-template-columns:1fr;text-align:center}
@@ -220,7 +233,7 @@ function eventsView() {
 function eventForm(d) {
   return `
     <form class="form-card" data-form="event" data-id="${esc(d.id||'')}">
-      <h3>${d.id ? 'Modifica evento' : 'Nuovo evento'}</h3>
+      <h3>${d.id ? 'Modifica evento' : 'Nuovo evento'} <button type="button" class="ai-trigger" onclick="openAI('event')">✨ Genera con AI</button></h3>
       <div class="field"><label>Titolo *</label><input name="title" required value="${esc(d.title||'')}"></div>
       <div class="form-row">
         <div class="field"><label>Data e ora *</label><input name="date" type="datetime-local" required value="${esc(d.date?d.date.slice(0,16):'')}"></div>
@@ -290,7 +303,7 @@ function newsView() {
 function newsForm(d) {
   return `
     <form class="form-card" data-form="news" data-id="${esc(d.id||'')}">
-      <h3>${d.id ? 'Modifica notizia' : 'Nuova notizia'}</h3>
+      <h3>${d.id ? 'Modifica notizia' : 'Nuova notizia'} <button type="button" class="ai-trigger" onclick="openAI('news')">✨ Genera con AI</button></h3>
       <div class="field"><label>Titolo *</label><input name="title" required value="${esc(d.title||'')}"></div>
       <div class="form-row">
         <div class="field"><label>Data pubblicazione *</label><input name="date" type="date" required value="${esc(d.date?d.date.slice(0,10):'')}"></div>
@@ -342,7 +355,7 @@ function projectsView() {
 function projectForm(d) {
   return `
     <form class="form-card" data-form="project" data-id="${esc(d.id||'')}">
-      <h3>${d.id?'Modifica progetto':'Nuovo progetto'}</h3>
+      <h3>${d.id?'Modifica progetto':'Nuovo progetto'} <button type="button" class="ai-trigger" onclick="openAI('project')">✨ Genera con AI</button></h3>
       <div class="form-row">
         <div class="field"><label>Nome *</label><input name="name" required value="${esc(d.name||'')}"></div>
         <div class="field"><label>Tag categoria</label><input name="tag" value="${esc(d.tag||'')}" placeholder="Promozione commercio"></div>
@@ -464,6 +477,139 @@ function formatDate(iso) {
 }
 function colorFor(c) {
   return { brand:'var(--brand)', gold:'var(--gold)', red:'var(--red)', ink:'var(--ink)' }[c] || 'var(--brand)';
+}
+
+/* ——— AI draft modal ——— */
+window.openAI = function(type) {
+  const labels = { project:'progetto', event:'evento', news:'notizia' };
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  modal.innerHTML = `
+    <div class="modal">
+      <h3><span class="spark">✨</span> Genera bozza ${labels[type]}</h3>
+      <p class="sub">Fornisci testo, un'immagine, un link o qualsiasi altra fonte. L'AI produrrà una bozza editabile che potrai poi ritoccare.</p>
+      <div class="field">
+        <label>Descrizione / idea di base</label>
+        <textarea id="aiText" rows="4" placeholder="Es: convegno con il procuratore Gratteri sul narcotraffico, si terrà al Palazzo Ducale il 17 aprile alle 19:30, organizzato con NarrAzioni e Idrusa Libreria..."></textarea>
+      </div>
+      <div class="field">
+        <label>Link fonte (opzionale)</label>
+        <input type="url" id="aiUrl" placeholder="https://articolo-su-qualcosa.it/...">
+      </div>
+      <div class="field">
+        <label>Immagine di riferimento (opzionale)</label>
+        <label class="upload-box">
+          <input type="file" id="aiImage" accept="image/*">
+          <div class="ph">📎 Clicca per caricare locandina, foto, ecc.</div>
+          <div class="upload-preview" id="aiImagePreview"></div>
+        </label>
+        <input type="hidden" id="aiImageUrl">
+      </div>
+      <div class="field" style="display:flex;align-items:center;gap:.6rem;padding:.8rem;background:var(--paper-alt);border-radius:8px">
+        <input type="checkbox" id="aiGenImg" style="width:auto;margin:0">
+        <label for="aiGenImg" style="margin:0;letter-spacing:0;text-transform:none;font-size:.9rem;color:var(--ink);font-weight:500;cursor:pointer">
+          Genera anche un'immagine illustrativa (DALL-E)
+          <div style="color:var(--ink-soft);font-size:.8rem;font-weight:400;margin-top:.2rem">Impiega ~15 secondi in più. Puoi comunque sostituirla dopo.</div>
+        </label>
+      </div>
+      <div id="aiStatus" style="margin-top:1rem;display:none"></div>
+      <div class="modal-actions">
+        <button class="btn ai" id="aiGo">✨ Genera bozza</button>
+        <button class="btn ghost" onclick="closeAI()">Annulla</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeAI(); });
+
+  document.getElementById('aiImage').onchange = async e => {
+    const file = e.target.files[0]; if (!file) return;
+    const preview = document.getElementById('aiImagePreview');
+    preview.textContent = 'Caricamento…';
+    try {
+      const r = await uploadFile(file);
+      document.getElementById('aiImageUrl').value = r.url;
+      preview.textContent = '✓ ' + r.name;
+    } catch (err) { preview.textContent = 'Errore: ' + err.message; }
+  };
+
+  document.getElementById('aiGo').onclick = async () => {
+    const text = document.getElementById('aiText').value.trim();
+    const sourceUrl = document.getElementById('aiUrl').value.trim();
+    const imageUrl = document.getElementById('aiImageUrl').value.trim();
+    const genImg = document.getElementById('aiGenImg').checked;
+    if (!text && !sourceUrl && !imageUrl) {
+      alert('Fornisci almeno una fonte: testo, link o immagine.');
+      return;
+    }
+    const status = document.getElementById('aiStatus');
+    const btn = document.getElementById('aiGo');
+    btn.disabled = true;
+    status.style.display = 'block';
+    status.innerHTML = '<div class="alert ok">⏳ Generazione bozza in corso...</div>';
+    try {
+      const draft = await api('/api/ai/draft', { method: 'POST',
+        body: JSON.stringify({ type, text, sourceUrl, imageUrl }) });
+      let generatedImage = null;
+      if (genImg && draft.suggestedImagePrompt) {
+        status.innerHTML = '<div class="alert ok">🎨 Generazione immagine DALL-E...</div>';
+        try {
+          const img = await api('/api/ai/image', { method: 'POST',
+            body: JSON.stringify({ prompt: draft.suggestedImagePrompt }) });
+          generatedImage = img.url;
+        } catch (err) { console.warn('Image gen failed:', err.message); }
+      }
+      applyDraft(type, draft, generatedImage, imageUrl);
+      closeAI();
+    } catch (err) {
+      status.innerHTML = `<div class="alert err">${esc(err.message)}</div>`;
+      btn.disabled = false;
+    }
+  };
+};
+
+window.closeAI = function() {
+  const m = document.querySelector('.modal-bg');
+  if (m) m.remove();
+};
+
+function applyDraft(type, draft, generatedImage, sourceImage) {
+  // Carica il form se non è già aperto
+  if (!state.editing || state.editing.type !== type) {
+    state.editing = { type, data: {} };
+    renderTab();
+  }
+  const form = document.querySelector(`[data-form="${type}"]`);
+  if (!form) return;
+
+  const map = {
+    project: { name:'name', tag:'tag', description:'description', status:'status' },
+    event:   { title:'title', date:'date', location:'location', description:'description', organizers:'organizers', sponsors:'sponsors', info:'info' },
+    news:    { title:'title', excerpt:'excerpt', body:'body' }
+  };
+  const imageField = type === 'event' ? 'poster' : 'image';
+  const finalImage = generatedImage || sourceImage;
+
+  const fields = map[type];
+  Object.entries(fields).forEach(([k, name]) => {
+    if (draft[k] == null) return;
+    const input = form.querySelector(`[name="${name}"]`);
+    if (!input) return;
+    let val = draft[k];
+    if (name === 'date' && val && !val.includes('T')) val = val + 'T19:00';
+    input.value = val;
+  });
+  if (finalImage) {
+    const img = form.querySelector(`input[name="${imageField}"]`);
+    if (img) {
+      img.value = finalImage;
+      const preview = form.querySelector(`[data-preview="${imageField}"]`);
+      if (preview) preview.textContent = '✓ ' + (generatedImage ? 'Immagine generata: ' : 'Immagine: ') + finalImage;
+    }
+  }
+  // Flash visivo
+  form.style.transition = 'box-shadow .6s';
+  form.style.boxShadow = '0 0 0 3px rgba(123,79,191,.3)';
+  setTimeout(() => form.style.boxShadow = '', 1500);
 }
 
 /* ——— boot ——— */

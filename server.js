@@ -13,6 +13,7 @@ const crypto = require('crypto');
 const formidable = require('formidable');
 const { Pool } = require('pg');
 const { runSync, geocodePending } = require('./sync');
+const { generateDraft, generateImage } = require('./ai');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -286,6 +287,22 @@ async function handleApi(req, res, url) {
       return json(res, 200, result);
     } catch (e) { return json(res, 500, { error: e.message }); }
   }
+  if (url.pathname === '/api/ai/draft' && method === 'POST') {
+    try {
+      const body = await readJsonBody(req);
+      const result = await generateDraft(body);
+      return json(res, 200, result);
+    } catch (e) { return json(res, 500, { error: e.message }); }
+  }
+  if (url.pathname === '/api/ai/image' && method === 'POST') {
+    try {
+      const body = await readJsonBody(req);
+      if (!body.prompt) return json(res, 400, { error: 'prompt richiesto' });
+      const result = await generateImage(body.prompt);
+      return json(res, 200, result);
+    } catch (e) { return json(res, 500, { error: e.message }); }
+  }
+
   if (url.pathname === '/api/members-stats' && method === 'GET') {
     const { rows } = await pool.query(`
       SELECT
