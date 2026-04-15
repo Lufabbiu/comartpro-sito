@@ -68,9 +68,15 @@ async function migrate() {
       status TEXT,
       color TEXT,
       link TEXT,
+      image TEXT,
       created_at TIMESTAMPTZ DEFAULT now(),
       updated_at TIMESTAMPTZ DEFAULT now()
     );
+    ALTER TABLE projects ADD COLUMN IF NOT EXISTS image TEXT;
+    ALTER TABLE projects ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
+    ALTER TABLE events ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
+    ALTER TABLE news ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
+    ALTER TABLE events ADD COLUMN IF NOT EXISTS teaser TEXT;
     CREATE TABLE IF NOT EXISTS members (
       id SERIAL PRIMARY KEY,
       appsheet_row_id TEXT UNIQUE,
@@ -141,9 +147,9 @@ async function migrate() {
 
 // ——— Generic upsert (whitelisted cols) ———
 const COLS = {
-  events: ['id','title','date','location','description','poster','pdf','organizers','sponsors','info'],
-  news: ['id','title','date','author','excerpt','body','image'],
-  projects: ['id','name','tag','description','status','color','link']
+  events: ['id','title','date','location','description','poster','teaser','pdf','organizers','sponsors','info','sort_order'],
+  news: ['id','title','date','author','excerpt','body','image','sort_order'],
+  projects: ['id','name','tag','description','status','color','link','image','sort_order']
 };
 async function upsert(table, row) {
   const cols = COLS[table];
@@ -238,15 +244,15 @@ async function handleApi(req, res, url) {
 
   // Public reads
   if (url.pathname === '/api/events' && method === 'GET') {
-    const { rows } = await pool.query('SELECT * FROM events ORDER BY date DESC NULLS LAST');
+    const { rows } = await pool.query('SELECT * FROM events ORDER BY sort_order ASC, date DESC NULLS LAST');
     return json(res, 200, rows);
   }
   if (url.pathname === '/api/news' && method === 'GET') {
-    const { rows } = await pool.query('SELECT * FROM news ORDER BY date DESC NULLS LAST');
+    const { rows } = await pool.query('SELECT * FROM news ORDER BY sort_order ASC, date DESC NULLS LAST');
     return json(res, 200, rows);
   }
   if (url.pathname === '/api/projects' && method === 'GET') {
-    const { rows } = await pool.query('SELECT * FROM projects ORDER BY created_at ASC');
+    const { rows } = await pool.query('SELECT * FROM projects ORDER BY sort_order ASC, created_at ASC');
     return json(res, 200, rows);
   }
   if (url.pathname === '/api/members' && method === 'GET') {
@@ -276,6 +282,24 @@ async function handleApi(req, res, url) {
       return json(res, 200, { url: `/uploads/${path.basename(file.filepath)}`, name: file.originalFilename });
     });
     return;
+  }
+
+  // Reorder
+  const reorderMatch = url.pathname.match(/^\/api\/(events|news|projects)\/reorder$/);
+  if (reorderMatch && method === 'POST') {
+    const coll = reorderMatch[1];
+    const body = await readJsonBody(req);
+    const ids = Array.isArray(body.ids) ? body.ids : [];
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (let i = 0; i < ids.length; i++) {
+        await client.query(`UPDATE ${coll} SET sort_order=$1, updated_at=now() WHERE id=$2`, [i, ids[i]]);
+      }
+      await client.query('COMMIT');
+    } catch (e) { await client.query('ROLLBACK'); throw e; }
+    finally { client.release(); }
+    return json(res, 200, { ok: true });
   }
 
   // CRUD events/news/projects

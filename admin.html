@@ -59,12 +59,17 @@
   .section-head .count{color:var(--ink-soft);font-size:.9rem}
 
   .list{display:grid;gap:1rem;margin-bottom:2rem}
-  .item{background:#fff;border:1px solid var(--line);border-radius:12px;padding:1.2rem;display:grid;grid-template-columns:auto 1fr auto;gap:1.2rem;align-items:center}
+  .item{background:#fff;border:1px solid var(--line);border-radius:12px;padding:1.2rem;display:grid;grid-template-columns:auto auto 1fr auto;gap:1rem;align-items:center;transition:box-shadow .2s,transform .2s}
+  .item.dragging{opacity:.4}
+  .item.drag-over{box-shadow:0 0 0 2px var(--brand);transform:scale(1.01)}
+  .item .handle{cursor:grab;color:var(--ink-soft);font-size:1.3rem;padding:.4rem;user-select:none;touch-action:none}
+  .item .handle:active{cursor:grabbing}
   .item .thumb{width:70px;height:70px;border-radius:8px;background:var(--paper-alt);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:1.8rem;color:var(--ink-soft)}
   .item .thumb img{width:100%;height:100%;object-fit:cover}
   .item h3{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:600;margin-bottom:.2rem}
   .item .meta{font-size:.82rem;color:var(--ink-soft);display:flex;gap:1rem;flex-wrap:wrap}
   .item .actions{display:flex;gap:.5rem}
+  .hint{color:var(--ink-soft);font-size:.85rem;margin-bottom:1rem;padding:.6rem 1rem;background:rgba(45,122,62,.06);border-radius:8px;border-left:3px solid var(--brand)}
 
   .form-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:2rem;margin-bottom:2rem}
   .form-card h3{font-family:'Fraunces',serif;font-size:1.3rem;margin-bottom:1.5rem}
@@ -191,10 +196,12 @@ function eventsView() {
       <button class="btn primary small" onclick="startEdit('event')">+ Nuovo evento</button>
     </div>
     ${form ? eventForm(form) : ''}
-    <div class="list">
+    ${items.length > 1 ? '<div class="hint">💡 Trascina la maniglia ⋮⋮ per riordinare</div>' : ''}
+    <div class="list" data-list="events">
       ${items.length ? items.map(e => `
-        <div class="item">
-          <div class="thumb">${e.poster ? `<img src="${esc(e.poster)}">` : '📅'}</div>
+        <div class="item" draggable="true" data-id="${esc(e.id)}">
+          <div class="handle" title="Trascina per riordinare">⋮⋮</div>
+          <div class="thumb">${e.poster||e.teaser ? `<img src="${esc(e.teaser||e.poster)}">` : '📅'}</div>
           <div>
             <h3>${esc(e.title)}</h3>
             <div class="meta">
@@ -221,20 +228,27 @@ function eventForm(d) {
       </div>
       <div class="field"><label>Descrizione</label><textarea name="description">${esc(d.description||'')}</textarea></div>
       <div class="form-row">
-        <div class="field"><label>Locandina (immagine)</label>
+        <div class="field"><label>Locandina (immagine principale)</label>
           <label class="upload-box"><input type="file" accept="image/*" data-target="poster">
             <div class="ph">📎 Clicca per caricare</div>
             <div class="upload-preview" data-preview="poster">${d.poster ? `Attuale: ${esc(d.poster)}` : ''}</div>
           </label>
           <input type="hidden" name="poster" value="${esc(d.poster||'')}">
         </div>
-        <div class="field"><label>PDF locandina (opzionale)</label>
-          <label class="upload-box"><input type="file" accept="application/pdf" data-target="pdf">
+        <div class="field"><label>Foto teaser (anteprima lista)</label>
+          <label class="upload-box"><input type="file" accept="image/*" data-target="teaser">
             <div class="ph">📎 Clicca per caricare</div>
-            <div class="upload-preview" data-preview="pdf">${d.pdf ? `Attuale: ${esc(d.pdf)}` : ''}</div>
+            <div class="upload-preview" data-preview="teaser">${d.teaser ? `Attuale: ${esc(d.teaser)}` : ''}</div>
           </label>
-          <input type="hidden" name="pdf" value="${esc(d.pdf||'')}">
+          <input type="hidden" name="teaser" value="${esc(d.teaser||'')}">
         </div>
+      </div>
+      <div class="field"><label>PDF locandina (opzionale)</label>
+        <label class="upload-box"><input type="file" accept="application/pdf" data-target="pdf">
+          <div class="ph">📎 Clicca per caricare</div>
+          <div class="upload-preview" data-preview="pdf">${d.pdf ? `Attuale: ${esc(d.pdf)}` : ''}</div>
+        </label>
+        <input type="hidden" name="pdf" value="${esc(d.pdf||'')}">
       </div>
       <div class="field"><label>Organizzato da</label><input name="organizers" value="${esc(d.organizers||'')}" placeholder="Associazione X · Associazione Y"></div>
       <div class="field"><label>Con il sostegno di</label><input name="sponsors" value="${esc(d.sponsors||'')}" placeholder="Sponsor 1 · Sponsor 2"></div>
@@ -256,9 +270,11 @@ function newsView() {
       <button class="btn primary small" onclick="startEdit('news')">+ Nuova notizia</button>
     </div>
     ${form ? newsForm(form) : ''}
-    <div class="list">
+    ${items.length > 1 ? '<div class="hint">💡 Trascina la maniglia ⋮⋮ per riordinare</div>' : ''}
+    <div class="list" data-list="news">
       ${items.length ? items.map(n => `
-        <div class="item">
+        <div class="item" draggable="true" data-id="${esc(n.id)}">
+          <div class="handle" title="Trascina per riordinare">⋮⋮</div>
           <div class="thumb">${n.image ? `<img src="${esc(n.image)}">` : '📰'}</div>
           <div>
             <h3>${esc(n.title)}</h3>
@@ -306,10 +322,12 @@ function projectsView() {
       <button class="btn primary small" onclick="startEdit('project')">+ Nuovo progetto</button>
     </div>
     ${form ? projectForm(form) : ''}
-    <div class="list">
+    ${items.length > 1 ? '<div class="hint">💡 Trascina la maniglia ⋮⋮ per riordinare — definisce anche l\'ordine sul sito pubblico</div>' : ''}
+    <div class="list" data-list="projects">
       ${items.length ? items.map(p => `
-        <div class="item">
-          <div class="thumb" style="background:${colorFor(p.color)};color:#fff;font-family:'Fraunces',serif;font-weight:700;font-size:1.3rem">${esc((p.name||'').slice(0,2).toUpperCase())}</div>
+        <div class="item" draggable="true" data-id="${esc(p.id)}">
+          <div class="handle" title="Trascina per riordinare">⋮⋮</div>
+          <div class="thumb" style="${p.image?'':'background:'+colorFor(p.color)+';color:#fff;font-family:\'Fraunces\',serif;font-weight:700;font-size:1.3rem'}">${p.image?`<img src="${esc(p.image)}">`:esc((p.name||'').slice(0,2).toUpperCase())}</div>
           <div>
             <h3>${esc(p.name)}</h3>
             <div class="meta"><span>${esc(p.tag||'')}</span><span>● ${esc(p.status||'—')}</span></div>
@@ -338,6 +356,13 @@ function projectForm(d) {
           </select>
         </div>
       </div>
+      <div class="field"><label>Immagine progetto / teaser</label>
+        <label class="upload-box"><input type="file" accept="image/*" data-target="image">
+          <div class="ph">📎 Clicca per caricare</div>
+          <div class="upload-preview" data-preview="image">${d.image?`Attuale: ${esc(d.image)}`:''}</div>
+        </label>
+        <input type="hidden" name="image" value="${esc(d.image||'')}">
+      </div>
       <div class="field"><label>Link esterno (opzionale)</label><input name="link" value="${esc(d.link||'')}" placeholder="https://..."></div>
       <div class="form-actions">
         <button class="btn primary" type="submit">${d.id?'Salva modifiche':'Crea progetto'}</button>
@@ -361,7 +386,46 @@ window.del = async function(coll, id) {
   await loadAll();
 };
 
+function bindDragDrop() {
+  document.querySelectorAll('[data-list]').forEach(list => {
+    const coll = list.dataset.list;
+    let dragging = null;
+    list.querySelectorAll('.item').forEach(item => {
+      item.addEventListener('dragstart', e => {
+        dragging = item; item.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+        list.querySelectorAll('.item').forEach(i => i.classList.remove('drag-over'));
+        dragging = null;
+      });
+      item.addEventListener('dragover', e => {
+        e.preventDefault();
+        if (!dragging || dragging === item) return;
+        item.classList.add('drag-over');
+      });
+      item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+      item.addEventListener('drop', async e => {
+        e.preventDefault();
+        item.classList.remove('drag-over');
+        if (!dragging || dragging === item) return;
+        const all = [...list.querySelectorAll('.item')];
+        const dragIdx = all.indexOf(dragging);
+        const dropIdx = all.indexOf(item);
+        if (dragIdx < dropIdx) item.after(dragging); else item.before(dragging);
+        const ids = [...list.querySelectorAll('.item')].map(i => i.dataset.id);
+        try {
+          await api(`/api/${coll}/reorder`, { method: 'POST', body: JSON.stringify({ ids }) });
+          await loadAll();
+        } catch (err) { alert('Errore riordino: ' + err.message); }
+      });
+    });
+  });
+}
+
 function bindForms() {
+  bindDragDrop();
   document.querySelectorAll('[data-form]').forEach(f => {
     f.onsubmit = async e => {
       e.preventDefault();
