@@ -528,8 +528,8 @@ window.openAI = async function(type) {
       <div class="field" style="display:flex;align-items:center;gap:.6rem;padding:.8rem;background:var(--paper-alt);border-radius:8px">
         <input type="checkbox" id="aiGenImg" style="width:auto;margin:0">
         <label for="aiGenImg" style="margin:0;letter-spacing:0;text-transform:none;font-size:.9rem;color:var(--ink);font-weight:500;cursor:pointer">
-          Genera anche un'immagine illustrativa (DALL-E)
-          <div style="color:var(--ink-soft);font-size:.8rem;font-weight:400;margin-top:.2rem">Impiega ~15 secondi in più. Puoi comunque sostituirla dopo.</div>
+          Genera immagine con DALL-E (~15s extra)
+          <div style="color:var(--ink-soft);font-size:.8rem;font-weight:400;margin-top:.2rem">Se hai già caricato un'immagine di riferimento, questa verrà usata dall'AI come contesto ma NON sostituita. La generata compare insieme nelle gallerie/teaser.</div>
         </label>
       </div>
       <div id="aiStatus" style="margin-top:1rem;display:none"></div>
@@ -587,16 +587,32 @@ window.openAI = async function(type) {
       const draft = await api('/api/ai/draft', { method: 'POST',
         body: JSON.stringify({ type, text, sourceUrl, imageUrls, documents: docNames }) });
       let generatedImage = null;
-      if (genImg && draft.suggestedImagePrompt) {
-        status.innerHTML = '<div class="alert ok">🎨 Generazione immagine DALL-E...</div>';
-        try {
-          const img = await api('/api/ai/image', { method: 'POST',
-            body: JSON.stringify({ prompt: draft.suggestedImagePrompt }) });
-          generatedImage = img.url;
-        } catch (err) { console.warn('Image gen failed:', err.message); }
+      let imageError = null;
+      if (genImg) {
+        if (!draft.suggestedImagePrompt) {
+          imageError = 'L\'AI non ha fornito un prompt immagine utilizzabile.';
+        } else {
+          status.innerHTML = `<div class="alert ok">🎨 Generazione immagine DALL-E (può richiedere 15-30s)...<br><small style="font-weight:400;opacity:.75">Prompt: ${esc(draft.suggestedImagePrompt.slice(0,120))}${draft.suggestedImagePrompt.length>120?'…':''}</small></div>`;
+          try {
+            const img = await api('/api/ai/image', { method: 'POST',
+              body: JSON.stringify({ prompt: draft.suggestedImagePrompt }) });
+            generatedImage = img.url;
+          } catch (err) {
+            imageError = err.message;
+            console.error('DALL-E error:', err);
+          }
+        }
       }
+      // Applica sempre il testo; gestisce immagine con priorità upload → generata
       applyDraft(type, draft, generatedImage, imageUrls[0]);
-      closeAI();
+      if (imageError) {
+        status.innerHTML = `<div class="alert err">⚠️ Bozza testo applicata, ma generazione immagine fallita: ${esc(imageError)}<br><small>Puoi riprovare manualmente o caricare un'immagine.</small></div>`;
+        btn.textContent = 'Chiudi';
+        btn.disabled = false;
+        btn.onclick = closeAI;
+      } else {
+        closeAI();
+      }
     } catch (err) {
       status.innerHTML = `<div class="alert err">${esc(err.message)}</div>`;
       btn.disabled = false;
@@ -624,7 +640,6 @@ function applyDraft(type, draft, generatedImage, sourceImage) {
     news:    { title:'title', excerpt:'excerpt', body:'body' }
   };
   const imageField = type === 'event' ? 'poster' : 'image';
-  const finalImage = generatedImage || sourceImage;
 
   const fields = map[type];
   Object.entries(fields).forEach(([k, name]) => {
@@ -635,12 +650,25 @@ function applyDraft(type, draft, generatedImage, sourceImage) {
     if (name === 'date' && val && !val.includes('T')) val = val + 'T19:00';
     input.value = val;
   });
-  if (finalImage) {
+
+  // Priorità: 1) se c'è upload utente → usa quello come immagine principale; 2) altrimenti quella generata.
+  // Se ci sono entrambe, la generata va in teaser (eventi) o resta disponibile.
+  const mainImage = sourceImage || generatedImage;
+  if (mainImage) {
     const img = form.querySelector(`input[name="${imageField}"]`);
     if (img) {
-      img.value = finalImage;
+      img.value = mainImage;
       const preview = form.querySelector(`[data-preview="${imageField}"]`);
-      if (preview) preview.textContent = '✓ ' + (generatedImage ? 'Immagine generata: ' : 'Immagine: ') + finalImage;
+      if (preview) preview.textContent = '✓ ' + (mainImage === generatedImage ? 'Immagine generata AI: ' : 'Immagine caricata: ') + mainImage;
+    }
+  }
+  // Se caricata E generata entrambe (solo eventi hanno teaser separato): metti generata nel teaser
+  if (type === 'event' && sourceImage && generatedImage) {
+    const teaser = form.querySelector('input[name="teaser"]');
+    if (teaser) {
+      teaser.value = generatedImage;
+      const p = form.querySelector('[data-preview="teaser"]');
+      if (p) p.textContent = '✓ Immagine AI (teaser): ' + generatedImage;
     }
   }
   // Flash visivo
