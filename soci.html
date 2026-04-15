@@ -128,7 +128,7 @@
 <script>
 const ALESSANO_CENTER = [18.3408, 39.8856];
 const esc = s => String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let members = [], userPos = null, map, markers = [], activeId = null;
+let members = [], userPos = null, map, markers = {}, activeId = null;
 
 const $q = document.getElementById('q');
 const $cat = document.getElementById('category');
@@ -179,15 +179,49 @@ function render() {
     </div>`).join('') : '<div class="empty">Nessun socio corrispondente ai filtri.</div>';
 
   $list.querySelectorAll('.card-s').forEach(c => c.onclick = () => {
-    activeId = c.dataset.id;
+    const id = c.dataset.id;
     const lat = parseFloat(c.dataset.lat), lng = parseFloat(c.dataset.lng);
-    if (map && !isNaN(lat) && !isNaN(lng)) {
-      map.flyTo({ center: [lng, lat], zoom: 16, duration: 800 });
-    }
-    render();
+    selectMember(id, !isNaN(lat) ? [lng, lat] : null);
   });
 
   updateMarkers(items);
+}
+
+function selectMember(id, coords) {
+  const prev = activeId;
+  activeId = id;
+  // update marker styles (no full re-render)
+  if (prev && markers[prev]) styleMarker(markers[prev].el, false);
+  if (markers[id]) {
+    styleMarker(markers[id].el, true);
+    if (!markers[id].mk.getPopup().isOpen()) markers[id].mk.togglePopup();
+  }
+  if (map && coords && !isNaN(coords[0])) {
+    map.flyTo({ center: coords, zoom: 16, duration: 700, essential: true });
+  }
+  // highlight card
+  document.querySelectorAll('.card-s').forEach(c => c.classList.toggle('active', c.dataset.id === id));
+  // scroll to card if triggered from map
+  const card = document.querySelector(`.card-s[data-id="${id}"]`);
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function styleMarker(el, active) {
+  if (active) {
+    el.style.background = '#d63b2e';
+    el.style.width = '32px';
+    el.style.height = '32px';
+    el.style.zIndex = '10';
+    el.style.boxShadow = '0 6px 20px rgba(214,59,46,.45)';
+    el.style.transform = 'translate(-50%,-100%) scale(1.05)';
+  } else {
+    el.style.background = 'var(--brand)';
+    el.style.width = '22px';
+    el.style.height = '22px';
+    el.style.zIndex = '1';
+    el.style.boxShadow = '0 4px 12px rgba(0,0,0,.2)';
+    el.style.transform = '';
+  }
 }
 
 function initMap() {
@@ -201,22 +235,24 @@ function initMap() {
 }
 
 function updateMarkers(items) {
-  markers.forEach(m => m.remove());
-  markers = [];
+  Object.values(markers).forEach(o => o.mk.remove());
+  markers = {};
   items.forEach(m => {
     if (!m.lat || !m.lng) return;
     const el = document.createElement('div');
-    el.style.cssText = 'width:22px;height:22px;border-radius:50%;background:var(--brand);border:3px solid #fff;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.2)';
-    if (m.id === activeId) el.style.background = 'var(--gold)';
-    const popup = new maplibregl.Popup({ offset: 14, closeButton: false }).setHTML(`
+    el.style.cssText = 'border-radius:50%;border:3px solid #fff;cursor:pointer;transition:all .25s ease';
+    styleMarker(el, m.id === activeId);
+    const popup = new maplibregl.Popup({ offset: 18, closeButton: true, maxWidth: '280px' }).setHTML(`
       <div class="popup">
         <h4>${esc(m.business_name)}</h4>
-        ${m.profession?`<p>${esc(m.profession)}</p>`:''}
+        ${m.profession?`<p style="color:var(--brand-dark);font-weight:600">${esc(m.profession)}</p>`:''}
         ${m.address?`<p>📍 ${esc(m.address)}</p>`:''}
-        ${m.phone?`<a href="tel:${esc(m.phone)}">☎ ${esc(m.phone)}</a>`:''}
+        ${m.phone?`<p><a href="tel:${esc(m.phone)}">☎ ${esc(m.phone)}</a></p>`:''}
+        ${m.email?`<p><a href="mailto:${esc(m.email)}">✉ ${esc(m.email)}</a></p>`:''}
       </div>`);
     const mk = new maplibregl.Marker(el).setLngLat([m.lng, m.lat]).setPopup(popup).addTo(map);
-    markers.push(mk);
+    el.addEventListener('click', e => { e.stopPropagation(); selectMember(m.id, [m.lng, m.lat]); });
+    markers[m.id] = { mk, el, popup };
   });
 }
 
