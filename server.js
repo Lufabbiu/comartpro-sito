@@ -4,13 +4,13 @@
  *   DATABASE_URL     Neon postgres connection string
  *   ADMIN_PASSWORD   password amministratore
  *   SESSION_SECRET   stringa random per firmare i cookie
- *   DATA_DIR         opzionale (upload dir, default ./data)
+ *   DATA_DIR         opzionale (path per seed db.json legacy, default ./data)
  */
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const formidable = require('formidable');
+const { formidable } = require('formidable');
 const { Pool } = require('pg');
 const { runSync, geocodePending } = require('./sync');
 const { generateDraft, generateImage } = require('./ai');
@@ -18,12 +18,9 @@ const { generateDraft, generateImage } = require('./ai');
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
 const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, 'data');
-const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'comartpro2026';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-me';
 const SESSION_DAYS = 7;
-
-fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 if (!process.env.DATABASE_URL) {
   console.error('⚠️  DATABASE_URL non impostata — usa la connection string Neon');
@@ -109,6 +106,14 @@ async function migrate() {
     CREATE INDEX IF NOT EXISTS idx_members_category ON members(category);
     CREATE INDEX IF NOT EXISTS idx_members_municipality ON members(municipality);
     CREATE INDEX IF NOT EXISTS idx_members_approved ON members(approved, public_consent);
+    CREATE TABLE IF NOT EXISTS media (
+      id TEXT PRIMARY KEY,
+      filename TEXT NOT NULL,
+      mime TEXT NOT NULL,
+      data BYTEA NOT NULL,
+      size INTEGER NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
   `;
   await pool.query(q);
 
@@ -227,6 +232,21 @@ function serveFile(res, filePath) {
     res.end(data);
   });
 }
+async function serveMedia(res, id) {
+  if (!id || id.includes('/')) { res.writeHead(404); return res.end('Not found'); }
+  try {
+    const { rows } = await pool.query('SELECT data, mime FROM media WHERE id = $1', [id]);
+    if (!rows.length) { res.writeHead(404); return res.end('Not found'); }
+    res.writeHead(200, {
+      'Content-Type': rows[0].mime || 'application/octet-stream',
+      'Cache-Control': 'public, max-age=31536000, immutable'
+    });
+    res.end(rows[0].data);
+  } catch (e) {
+    console.error('[serveMedia]', e.message);
+    res.writeHead(500); res.end('Server error');
+  }
+}
 
 // ——— API ———
 async function handleApi(req, res, url) {
@@ -303,7 +323,7 @@ async function handleApi(req, res, url) {
   if (url.pathname === '/api/ai/draft' && method === 'POST') {
     try {
       const body = await readJsonBody(req);
-      const result = await generateDraft(body);
+      const result = await generateDraft(body, pool);
       return json(res, 200, result);
     } catch (e) {
       console.error('[AI draft error]', e.message, e.stack);
@@ -314,7 +334,7 @@ async function handleApi(req, res, url) {
     try {
       const body = await readJsonBody(req);
       if (!body.prompt) return json(res, 400, { error: 'prompt richiesto' });
-      const result = await generateImage(body.prompt);
+      const result = await generateImage(body.prompt, pool);
       return json(res, 200, result);
     } catch (e) {
       console.error('[AI image error]', e.message, e.stack);
@@ -338,12 +358,25 @@ async function handleApi(req, res, url) {
   }
 
   if (url.pathname === '/api/upload' && method === 'POST') {
-    const form = formidable({ uploadDir: UPLOADS_DIR, keepExtensions: true, maxFileSize: 25 * 1024 * 1024 });
-    form.parse(req, (err, fields, files) => {
+    const form = formidable({ keepExtensions: true, maxFileSize: 25 * 1024 * 1024 });
+    form.parse(req, async (err, fields, files) => {
       if (err) return json(res, 500, { error: err.message });
       const file = Array.isArray(files.file) ? files.file[0] : files.file;
       if (!file) return json(res, 400, { error: 'Nessun file' });
-      return json(res, 200, { url: `/uploads/${path.basename(file.filepath)}`, name: file.originalFilename });
+      try {
+        const ext = path.extname(file.originalFilename || file.filepath || '').toLowerCase() || '.bin';
+        const id = crypto.randomUUID() + ext;
+        const data = fs.readFileSync(file.filepath);
+        const mime = file.mimetype || 'application/octet-stream';
+        await pool.query(
+          'INSERT INTO media (id, filename, mime, data, size) VALUES ($1,$2,$3,$4,$5)',
+          [id, file.originalFilename || id, mime, data, data.length]
+        );
+        fs.unlink(file.filepath, () => {});
+        return json(res, 200, { url: `/uploads/${id}`, name: file.originalFilename });
+      } catch (e) {
+        return json(res, 500, { error: e.message });
+      }
     });
     return;
   }
@@ -410,7 +443,7 @@ async function main() {
       const url = new URL(req.url, `http://${req.headers.host}`);
       const p = url.pathname;
       if (p.startsWith('/api/')) return handleApi(req, res, url);
-      if (p.startsWith('/uploads/')) return serveFile(res, path.join(UPLOADS_DIR, path.basename(p)));
+      if (p.startsWith('/uploads/')) return serveMedia(res, decodeURIComponent(p.slice('/uploads/'.length)));
       if (p === '/admin' || p === '/admin/') return serveFile(res, path.join(ROOT, 'admin.html'));
       let urlPath = decodeURIComponent(p);
       if (urlPath === '/') urlPath = '/index.html';

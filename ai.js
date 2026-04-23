@@ -3,8 +3,6 @@
  * Env: OPENAI_API_KEY
  */
 const https = require('https');
-const fs = require('fs');
-const path = require('path');
 
 const API_KEY = process.env.OPENAI_API_KEY;
 const MODEL_TEXT = process.env.OPENAI_MODEL || 'gpt-4o-mini';
@@ -99,7 +97,7 @@ OUTPUT
 Rispondi SOLO con un oggetto JSON valido secondo lo schema.
 Nessun markdown code fence attorno al JSON. Nessun testo prima o dopo.`;
 
-async function generateDraft({ type, text = '', sourceUrl = '', imageUrls = [], documents = [], extra = '' }) {
+async function generateDraft({ type, text = '', sourceUrl = '', imageUrls = [], documents = [], extra = '' }, pool) {
   if (!API_KEY) throw new Error('OPENAI_API_KEY non configurata');
   const schema = SCHEMAS[type];
   if (!schema) throw new Error('Tipo non valido: ' + type);
@@ -137,18 +135,19 @@ Genera ora il JSON con tutti i campi dello schema. In particolare il campo di ap
 
   const userParts = [{ type: 'text', text: promptText }];
 
-  // Attach images
+  // Attach images (local /uploads/:id → base64 data URL dal DB; esterne → URL diretto)
   for (const url of imageUrls.slice(0, 4)) {
     let finalUrl = url;
-    if (url.startsWith('/')) {
-      const uploadsDir = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, 'uploads') : path.join(__dirname, 'data', 'uploads');
-      const fname = path.basename(url);
-      const fpath = path.join(uploadsDir, fname);
-      if (fs.existsSync(fpath)) {
-        const b64 = fs.readFileSync(fpath).toString('base64');
-        const ext = path.extname(fname).slice(1).toLowerCase() || 'png';
-        finalUrl = `data:image/${ext==='jpg'?'jpeg':ext};base64,${b64}`;
-      } else { continue; }
+    if (url.startsWith('/uploads/')) {
+      if (!pool) continue;
+      const id = decodeURIComponent(url.slice('/uploads/'.length));
+      const { rows } = await pool.query('SELECT data, mime FROM media WHERE id = $1', [id]);
+      if (!rows.length) continue;
+      const mime = rows[0].mime || 'image/png';
+      const b64 = Buffer.from(rows[0].data).toString('base64');
+      finalUrl = `data:${mime};base64,${b64}`;
+    } else if (url.startsWith('/')) {
+      continue;
     }
     userParts.push({ type: 'image_url', image_url: { url: finalUrl, detail: 'high' } });
   }
@@ -172,26 +171,29 @@ Genera ora il JSON con tutti i campi dello schema. In particolare il campo di ap
   return parsed;
 }
 
-async function generateImage(prompt) {
+async function generateImage(prompt, pool) {
   if (!API_KEY) throw new Error('OPENAI_API_KEY non configurata');
+  if (!pool) throw new Error('DB pool richiesto per salvare l\'immagine generata');
   const res = await postJson('https://api.openai.com/v1/images/generations', {
     model: MODEL_IMAGE, prompt: prompt.slice(0, 4000), size: '1024x1024', n: 1, quality: 'standard'
   }, API_KEY);
   const url = res.data?.[0]?.url;
   if (!url) throw new Error('Nessuna immagine generata');
-  const uploadsDir = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, 'uploads') : path.join(__dirname, 'data', 'uploads');
-  fs.mkdirSync(uploadsDir, { recursive: true });
-  const fname = `ai-${Date.now()}.png`;
-  const fpath = path.join(uploadsDir, fname);
-  await new Promise((resolve, reject) => {
+  const buf = await new Promise((resolve, reject) => {
     https.get(url, r => {
-      const ws = fs.createWriteStream(fpath);
-      r.pipe(ws);
-      ws.on('finish', () => ws.close(resolve));
-      ws.on('error', reject);
+      if (r.statusCode !== 200) return reject(new Error(`DALL-E download HTTP ${r.statusCode}`));
+      const chunks = [];
+      r.on('data', c => chunks.push(c));
+      r.on('end', () => resolve(Buffer.concat(chunks)));
+      r.on('error', reject);
     }).on('error', reject);
   });
-  return { url: `/uploads/${fname}`, prompt };
+  const id = `ai-${Date.now()}.png`;
+  await pool.query(
+    'INSERT INTO media (id, filename, mime, data, size) VALUES ($1,$2,$3,$4,$5)',
+    [id, id, 'image/png', buf, buf.length]
+  );
+  return { url: `/uploads/${id}`, prompt };
 }
 
 module.exports = { generateDraft, generateImage };
