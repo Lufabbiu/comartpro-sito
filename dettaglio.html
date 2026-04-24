@@ -184,8 +184,12 @@ function renderSidebar(d) {
     ctas.push(`<a class="btn ghost" href="${BACK[type]}">Altri eventi</a>`);
     if (ctas.length) parts.push(`<div class="cta-box">${ctas.join('')}</div>`);
   }
-  if (type === 'project' && d.link) {
-    parts.push(`<div class="cta-box"><a class="btn primary" href="${esc(d.link)}" target="_blank" rel="noopener">Vai al progetto ↗</a><a class="btn ghost" href="/progetti.html">Altri progetti</a></div>`);
+  if (type === 'project') {
+    const ctas = [];
+    if (d.id === 'ledwall') ctas.push(`<a class="btn primary" href="/ledwall.html">Prova la demo interattiva →</a>`);
+    if (d.link) ctas.push(`<a class="btn ${d.id==='ledwall'?'ghost':'primary'}" href="${esc(d.link)}" target="_blank" rel="noopener">Vai al progetto ↗</a>`);
+    ctas.push(`<a class="btn ghost" href="/progetti.html">Altri progetti</a>`);
+    parts.push(`<div class="cta-box">${ctas.join('')}</div>`);
   }
   if (!parts.length) return '';
   return `<div style="max-width:720px;margin:0 auto;padding:0 2rem"><div class="sidebar-info"><h4>Informazioni utili</h4>${parts.join('')}</div></div>`;

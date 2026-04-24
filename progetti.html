@@ -95,6 +95,8 @@
   .project .meta .v{font-size:.92rem;font-weight:600;color:var(--ink)}
   .project .cta{display:inline-flex;align-items:center;gap:.5rem;color:var(--brand-dark);font-weight:600;text-decoration:none;font-size:.95rem;align-self:flex-start}
   .project .cta:hover{gap:.8rem}
+  .project .cta-row{display:flex;flex-direction:column;gap:.55rem;align-items:flex-start}
+  .project .cta.demo{color:var(--gold);border-top:1px dashed var(--line);padding-top:.55rem;width:auto}
 
   /* EVENTS */
   .events{background:var(--paper-alt)}
@@ -293,7 +295,10 @@ async function renderProjects() {
           <div><div class="k">Categoria</div><div class="v">${esc(p.tag||'—')}</div></div>
           <div><div class="k">Stato</div><div class="v" style="color:${statusColor(p.status)}">● ${esc(p.status||'—')}</div></div>
         </div>
-        ${p.content?`<a class="cta" href="/dettaglio.html?type=project&id=${encodeURIComponent(p.id)}">Scopri l'iniziativa →</a>`:p.link?`<a class="cta" href="${esc(p.link)}" target="_blank" rel="noopener">Vedi il progetto ↗</a>`:`<span class="cta" style="opacity:.5;cursor:default">In arrivo →</span>`}
+        <div class="cta-row">
+          ${p.content?`<a class="cta" href="/dettaglio.html?type=project&id=${encodeURIComponent(p.id)}">Scopri l'iniziativa →</a>`:p.link?`<a class="cta" href="${esc(p.link)}" target="_blank" rel="noopener">Vedi il progetto ↗</a>`:`<span class="cta" style="opacity:.5;cursor:default">In arrivo →</span>`}
+          ${p.id==='ledwall'?`<a class="cta demo" href="/ledwall.html">Prova la demo interattiva →</a>`:''}
+        </div>
       </div>
     </div>`).join('');
 }
