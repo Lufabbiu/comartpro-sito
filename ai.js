@@ -6,7 +6,7 @@ const https = require('https');
 
 const API_KEY = process.env.OPENAI_API_KEY;
 const MODEL_TEXT = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-const MODEL_IMAGE = 'dall-e-3';
+const MODEL_IMAGE = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1';
 
 function postJson(url, body, apiKey) {
   return new Promise((resolve, reject) => {
@@ -175,19 +175,15 @@ async function generateImage(prompt, pool) {
   if (!API_KEY) throw new Error('OPENAI_API_KEY non configurata');
   if (!pool) throw new Error('DB pool richiesto per salvare l\'immagine generata');
   const res = await postJson('https://api.openai.com/v1/images/generations', {
-    model: MODEL_IMAGE, prompt: prompt.slice(0, 4000), size: '1024x1024', n: 1, quality: 'standard'
+    model: MODEL_IMAGE,
+    prompt: prompt.slice(0, 4000),
+    size: '1024x1024',
+    n: 1,
+    quality: 'high'
   }, API_KEY);
-  const url = res.data?.[0]?.url;
-  if (!url) throw new Error('Nessuna immagine generata');
-  const buf = await new Promise((resolve, reject) => {
-    https.get(url, r => {
-      if (r.statusCode !== 200) return reject(new Error(`DALL-E download HTTP ${r.statusCode}`));
-      const chunks = [];
-      r.on('data', c => chunks.push(c));
-      r.on('end', () => resolve(Buffer.concat(chunks)));
-      r.on('error', reject);
-    }).on('error', reject);
-  });
+  const b64 = res.data?.[0]?.b64_json;
+  if (!b64) throw new Error('Nessuna immagine generata');
+  const buf = Buffer.from(b64, 'base64');
   const id = `ai-${Date.now()}.png`;
   await pool.query(
     'INSERT INTO media (id, filename, mime, data, size) VALUES ($1,$2,$3,$4,$5)',

@@ -549,7 +549,7 @@ window.openAI = async function(type) {
       <div class="field" style="display:flex;align-items:center;gap:.6rem;padding:.8rem;background:var(--paper-alt);border-radius:8px">
         <input type="checkbox" id="aiGenImg" style="width:auto;margin:0">
         <label for="aiGenImg" style="margin:0;letter-spacing:0;text-transform:none;font-size:.9rem;color:var(--ink);font-weight:500;cursor:pointer">
-          Genera immagine con DALL-E (~15s extra)
+          Genera immagine con GPT Image (~20s extra)
           <div style="color:var(--ink-soft);font-size:.8rem;font-weight:400;margin-top:.2rem">Se hai già caricato un'immagine di riferimento, questa verrà usata dall'AI come contesto ma NON sostituita. La generata compare insieme nelle gallerie/teaser.</div>
         </label>
       </div>
@@ -626,14 +626,14 @@ window.openAI = async function(type) {
         if (!draft.suggestedImagePrompt) {
           imageError = 'L\'AI non ha fornito un prompt immagine utilizzabile.';
         } else {
-          status.innerHTML = `<div class="alert ok">🎨 Generazione immagine DALL-E (può richiedere 15-30s)...<br><small style="font-weight:400;opacity:.75">Prompt: ${esc(draft.suggestedImagePrompt.slice(0,120))}${draft.suggestedImagePrompt.length>120?'…':''}</small></div>`;
+          status.innerHTML = `<div class="alert ok">🎨 Generazione immagine GPT Image (può richiedere 20-40s)...<br><small style="font-weight:400;opacity:.75">Prompt: ${esc(draft.suggestedImagePrompt.slice(0,120))}${draft.suggestedImagePrompt.length>120?'…':''}</small></div>`;
           try {
             const img = await api('/api/ai/image', { method: 'POST',
               body: JSON.stringify({ prompt: draft.suggestedImagePrompt }) });
             generatedImage = img.url;
           } catch (err) {
             imageError = err.message;
-            console.error('DALL-E error:', err);
+            console.error('Image generation error:', err);
           }
         }
       }
