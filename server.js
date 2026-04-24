@@ -307,7 +307,24 @@ async function handleApi(req, res, url) {
     if (!ledwallRateOk(ip)) return json(res, 429, { error: 'Troppe richieste. Riprova fra qualche minuto.' });
     try {
       const body = await readJsonBody(req);
+      // Lookup member match sul database: prima esatto case-insensitive, poi contains
+      let member = null;
+      const q = (body.businessName || '').trim();
+      if (q) {
+        const exact = await pool.query(
+          `SELECT business_name, address, municipality, phone, email, profession, category
+           FROM members WHERE approved=TRUE AND LOWER(business_name)=LOWER($1) LIMIT 1`, [q]);
+        member = exact.rows[0] || null;
+        if (!member) {
+          const fuzzy = await pool.query(
+            `SELECT business_name, address, municipality, phone, email, profession, category
+             FROM members WHERE approved=TRUE AND business_name ILIKE $1 LIMIT 1`, ['%' + q + '%']);
+          member = fuzzy.rows[0] || null;
+        }
+      }
+      body.memberInfo = member;
       const result = await generateLedwallCampaign(body, pool);
+      result.matchedMember = member;
       return json(res, 200, result);
     } catch (e) {
       console.error('[ledwall-campaign error]', e.message, e.stack);

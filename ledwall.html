@@ -299,38 +299,21 @@
     55%{filter:brightness(1.05)}
   }
 
-  /* LED WALL UNIT */
+  /* LED WALL UNIT — header/footer INTERNI al bezel, screen aspect 2:3 matcha l'output gpt-image-1 */
   .ledwall-unit{
     position:absolute;
     left:50%;top:5%;
     transform:translateX(-50%);
-    width:clamp(180px,18vw,260px);
+    width:clamp(200px,20vw,280px);
     z-index:5;
-    display:flex;flex-direction:column;align-items:center;gap:10px;
     filter:drop-shadow(0 20px 40px rgba(0,0,0,.55));
   }
-  .civic-plate{
-    background:linear-gradient(180deg,var(--stone) 0%,var(--stone-dark) 100%);
-    color:#3a2f22;
-    padding:.5rem 1rem .55rem;
-    font-family:'Fraunces',serif;
-    font-size:.72rem;letter-spacing:.32em;font-weight:700;
-    text-transform:uppercase;
-    display:flex;align-items:center;gap:.6rem;
-    border-radius:3px;
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,.4),
-      inset 0 -1px 0 rgba(0,0,0,.25),
-      0 2px 4px rgba(0,0,0,.4);
-    text-shadow:0 1px 0 rgba(255,255,255,.2);
-    white-space:nowrap;
-  }
-  .civic-plate svg{flex-shrink:0;opacity:.85}
   .ledwall-frame{
-    width:100%;aspect-ratio:1/2;
+    width:100%;
     background:linear-gradient(180deg,var(--bezel-hi),var(--bezel));
     border-radius:6px;
-    padding:6px;position:relative;
+    padding:10px;position:relative;
+    display:flex;flex-direction:column;gap:6px;
     box-shadow:
       0 0 0 1px rgba(255,255,255,.05) inset,
       0 0 50px 10px rgba(45,122,62,.18),
@@ -341,19 +324,57 @@
     content:"";position:absolute;width:4px;height:4px;border-radius:50%;
     background:radial-gradient(circle,#555,#111);
     box-shadow:0 0 2px rgba(255,255,255,.2) inset;
+    z-index:3;
   }
   .ledwall-frame::before{top:4px;left:4px}
   .ledwall-frame::after{top:4px;right:4px}
+  .ledwall-header{
+    background:linear-gradient(180deg,var(--stone) 0%,var(--stone-dark) 100%);
+    color:#3a2f22;
+    padding:.42rem .6rem .44rem;
+    border-radius:3px;
+    display:flex;align-items:center;justify-content:center;gap:.5rem;
+    font-family:'Fraunces',serif;
+    font-size:.66rem;letter-spacing:.28em;font-weight:700;
+    text-transform:uppercase;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.35),
+      inset 0 -1px 0 rgba(0,0,0,.22);
+    text-shadow:0 1px 0 rgba(255,255,255,.18);
+    white-space:nowrap;flex-shrink:0;
+  }
+  .ledwall-header svg{flex-shrink:0;opacity:.85}
   .ledwall-screen{
-    position:relative;width:100%;height:100%;
+    position:relative;width:100%;
+    aspect-ratio:2/3;
     background:#000;overflow:hidden;border-radius:2px;
     box-shadow:inset 0 0 30px rgba(0,0,0,.8);
+    flex-shrink:0;
   }
   .ledwall-screen .slide{
     position:absolute;inset:0;width:100%;height:100%;
     object-fit:cover;opacity:0;
     transition:opacity 1.2s ease-in-out;
     pointer-events:none;
+  }
+  .ledwall-footer{
+    background:linear-gradient(180deg,#0d1020,#040510);
+    color:rgba(244,239,228,.85);
+    padding:.42rem .5rem;
+    border-radius:3px;
+    border:1px solid rgba(244,239,228,.08);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+    display:flex;align-items:center;justify-content:center;gap:.45rem;
+    flex-shrink:0;
+  }
+  .ledwall-footer .logo-mini{
+    width:14px;height:14px;border-radius:50%;background:var(--brand);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .ledwall-footer .logo-mini img{width:100%;height:100%;object-fit:contain;padding:1px}
+  .ledwall-footer .bp-text{
+    font-family:'Fraunces',serif;font-size:.58rem;letter-spacing:.2em;
+    text-transform:uppercase;font-weight:600;
   }
   .ledwall-screen .slide.active{opacity:1}
   .ledwall-screen .screen-placeholder{
@@ -643,16 +664,26 @@
         </div>
       </div>
 
-      <div class="field">
-        <label for="style">Stile grafico</label>
-        <select id="style" name="style">
-          <option value="editoriale minimale">Editoriale minimale</option>
-          <option value="vibrante pop" selected>Vibrante pop</option>
-          <option value="istituzionale classico">Istituzionale classico</option>
-          <option value="tipografico audace">Tipografico audace</option>
-          <option value="fotografico caldo">Fotografico caldo</option>
-          <option value="illustrato moderno">Illustrato moderno</option>
-        </select>
+      <div class="field inline-grid">
+        <div>
+          <label for="renderingType">Tipo di rendering</label>
+          <select id="renderingType" name="renderingType">
+            <option value="grafico" selected>Grafici tipografici</option>
+            <option value="fotografico">Foto realistiche</option>
+            <option value="misto">Misto (foto + grafici)</option>
+          </select>
+        </div>
+        <div>
+          <label for="style">Stile grafico</label>
+          <select id="style" name="style">
+            <option value="editoriale minimale">Editoriale minimale</option>
+            <option value="vibrante pop" selected>Vibrante pop</option>
+            <option value="istituzionale classico">Istituzionale classico</option>
+            <option value="tipografico audace">Tipografico audace</option>
+            <option value="fotografico caldo">Fotografico caldo</option>
+            <option value="illustrato moderno">Illustrato moderno</option>
+          </select>
+        </div>
       </div>
 
       <div class="form-actions">
@@ -686,23 +717,23 @@
     </div>
 
     <div class="ledwall-unit">
-      <div class="civic-plate">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M12 2 L3 7 V20 H9 V14 H15 V20 H21 V7 Z"/>
-        </svg>
-        <span>Città di Alessano</span>
-      </div>
       <div class="ledwall-frame">
+        <div class="ledwall-header">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2 L3 7 V20 H9 V14 H15 V20 H21 V7 Z"/>
+          </svg>
+          <span>Città di Alessano</span>
+        </div>
         <div class="ledwall-screen" id="screen">
           <div class="screen-placeholder" id="placeholder">
             <span class="dot"></span>
             <span>In attesa<br>di una campagna</span>
           </div>
         </div>
-      </div>
-      <div class="brand-plate">
-        <span class="logo-mini"><img src="/public/logo.png?v=3" alt=""></span>
-        <span class="bp-text">Com.Art.Pro APS ETS</span>
+        <div class="ledwall-footer">
+          <span class="logo-mini"><img src="/public/logo.png?v=3" alt=""></span>
+          <span class="bp-text">Com.Art.Pro APS ETS</span>
+        </div>
       </div>
     </div>
 
@@ -915,7 +946,8 @@
         imageUrls,
         numSlides: parseInt(form.numSlides.value, 10),
         rotationMs: parseInt(form.rotationSeconds.value, 10) * 1000,
-        style: form.style.value
+        style: form.style.value,
+        renderingType: form.renderingType.value
       };
 
       const ac = new AbortController();
@@ -939,7 +971,16 @@
       if (!data.slides || !data.slides.length) throw new Error('Nessuna slide restituita');
 
       renderCampaign(data);
-      formAlert.innerHTML = '<div class="alert info">Campagna pronta. Il loop sta girando sul LED wall.</div>';
+      const bits = ['<div class="alert info">Campagna pronta. Il loop sta girando sul LED wall.</div>'];
+      if (data.matchedMember) {
+        const m = data.matchedMember;
+        const rowParts = [];
+        if (m.address) rowParts.push(esc(m.address));
+        if (m.municipality) rowParts.push(esc(m.municipality));
+        if (m.phone) rowParts.push('tel. ' + esc(m.phone));
+        bits.push(`<div class="alert info" style="margin-top:.6rem;background:rgba(200,155,60,.1);color:#7a5a20;border-color:rgba(200,155,60,.3)">✓ Socio riconosciuto: <strong>${esc(m.business_name)}</strong>${rowParts.length ? ' · ' + rowParts.join(' · ') : ''}<br><small style="opacity:.8">Questi dati sono stati passati all'AI per la call-to-action.</small></div>`);
+      }
+      formAlert.innerHTML = bits.join('');
     } catch (err) {
       stopLoading();
       const screen = $('#screen');

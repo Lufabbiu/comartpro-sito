@@ -197,50 +197,74 @@ async function generateImage(prompt, pool) {
    coerenti a partire da brief cliente
    —————————————————————————————————————————— */
 
-const LEDWALL_SYSTEM_PROMPT = `Sei un direttore creativo che progetta campagne pubblicitarie per LED wall outdoor verticali (formato portrait 2:3, aspetto 1024×1536) installati nelle piazze dei paesi del Basso Salento (Alessano, Montesardo, Puglia).
+const LEDWALL_RENDERING_GUIDE = {
+  grafico: 'Ogni slide è un POSTER TIPOGRAFICO: graphic design outdoor con testo grande e leggibile a distanza, layout editoriale forte, palette coordinata, tipografia protagonista. Il testo letterale sulla slide è centrale.',
+  fotografico: 'Ogni slide è una FOTOGRAFIA EDITORIALE REALISTICA (stile rivista di viaggi/lifestyle/food): natural light, grana fine, profondità di campo, dettagli autentici. NESSUN overlay di testo sulla slide (al massimo un piccolo watermark discreto del brand in un angolo). Soggetti: prodotti reali, persone, ambienti, dettagli materici. Coerenza cromatica e concettuale tra tutte le slide (stessa serie fotografica).',
+  misto: 'Alterna due modalità: slide DISPARI (1, 3, 5) sono POSTER TIPOGRAFICI con testo grande in stile outdoor. Slide PARI (2, 4, 6) sono FOTOGRAFIE EDITORIALI realistiche (natural light, editorial) SENZA testo overlay. Mantieni la stessa palette e lo stesso mood visivo per far percepire la sequenza come unica campagna. Ogni prompt deve specificare in apertura il tipo ("Typographic poster:" o "Editorial photograph:").'
+};
+
+function buildLedwallSystemPrompt(style, renderingType){
+  const rendering = LEDWALL_RENDERING_GUIDE[renderingType] || LEDWALL_RENDERING_GUIDE.grafico;
+  return `Sei un direttore creativo che progetta campagne pubblicitarie per LED wall outdoor verticali (formato portrait 2:3, 1024×1536) installati nelle piazze dei paesi del Basso Salento (Alessano, Montesardo, Puglia).
 
 OBIETTIVO
-Pianificare una sequenza di slide coerenti che raccontino un'operazione di marketing per un'attività locale. Il LED wall è visto a distanza, i passanti hanno pochi secondi per leggere: tipografia grande, contrasto alto, un concetto per slide.
+Pianificare una sequenza di slide coerenti per un'operazione di marketing di un'attività locale. Il LED wall è visto a distanza: il passante ha pochi secondi per capire.
 
 STRUTTURA CAMPAGNA
-- Slide 1: apertura/brand (nome attività + tagline o hook visivo)
-- Slide centrali: offerta, prodotto, servizio, narrazione
-- Slide finale: call to action chiara (orari / indirizzo / contatto / data evento)
+- Slide 1: apertura/brand (nome attività o hook visivo forte).
+- Slide centrali: offerta, prodotto/servizio, narrazione.
+- Slide finale: call to action chiara (indirizzo / telefono / orari / data).
 
-STILE
-Evita estetica "AI generica". Preferisci: illustrazioni pulite, fotografia editoriale, composizioni tipografiche forti, palette coerente. Rispetta lo stile richiesto dal brief ("${/* injected */ 'STILE'}").
+STILE VISIVO RICHIESTO: "${style}".
+
+MODALITÀ DI RENDERING
+${rendering}
 
 OUTPUT
 JSON con chiave "slides" = array di oggetti. Ogni oggetto:
 {
   "title": "didascalia italiana breve (max 8 parole, descrive la slide)",
-  "prompt": "prompt dettagliato in INGLESE per gpt-image-1; include: vertical portrait 2:3 composition, literal on-screen text in italian (scrivilo in virgolette), graphic style, color palette, mood, business name, 'Alessano Salento' come contesto; bold outdoor-readable typography"
+  "prompt": "prompt dettagliato in INGLESE per gpt-image-1; include OBBLIGATORIAMENTE: (1) vertical portrait 2:3 composition; (2) se è poster: literal on-screen text in italian tra virgolette, bold outdoor-readable typography, scegliere font family coerente con lo stile; (3) se è fotografia editoriale: no text overlay, cinematic natural light, soggetto concreto; (4) palette e mood coerenti con lo stile '${style}'; (5) nome attività e territorio 'Alessano, Salento' come contesto quando pertinente"
 }
 
 Nessun testo prima o dopo il JSON. Nessun markdown fence.`;
+}
 
-async function generateLedwallCampaign({ brief = '', businessName = '', logoUrl = '', imageUrls = [], numSlides = 4, style = 'contemporaneo italiano', rotationMs = 5000 }, pool) {
+async function generateLedwallCampaign({ brief = '', businessName = '', logoUrl = '', imageUrls = [], numSlides = 4, style = 'contemporaneo italiano', rotationMs = 5000, renderingType = 'grafico', memberInfo = null }, pool) {
   if (!API_KEY) throw new Error('OPENAI_API_KEY non configurata');
   if (!pool) throw new Error('DB pool richiesto');
   if (!brief.trim()) throw new Error('Brief mancante');
   if (!businessName.trim()) throw new Error('Nome attività mancante');
 
   const n = Math.min(Math.max(parseInt(numSlides) || 4, 2), 6);
+  const rt = (renderingType in LEDWALL_RENDERING_GUIDE) ? renderingType : 'grafico';
+
+  const memberBlock = memberInfo ? `
+
+DATI SOCIO DA DATABASE (USA QUESTI CONTATTI REALI NELLE CTA DELLE SLIDE):
+- Nome registrato: ${memberInfo.business_name}
+- Indirizzo: ${memberInfo.address || '—'}
+- Comune: ${memberInfo.municipality || '—'}
+- Telefono: ${memberInfo.phone || '—'}
+- Attività: ${memberInfo.profession || memberInfo.category || '—'}
+
+Quando una slide richiede un contatto, usa LITERALMENTE questi valori (non inventare). Se la modalità è "fotografico", la CTA con contatti va su UNA sola slide finale di tipo poster/info.` : '';
 
   // 1. PIANIFICAZIONE: gpt-4o-mini scrive N prompt coerenti
   const userPlanPrompt = `BUSINESS: ${businessName}
 BRIEF CLIENTE: ${brief}
 SLIDE RICHIESTE: ${n}
 STILE: ${style}
-${logoUrl ? 'LOGO FORNITO: sì (suggerire di incorporare il nome/lettere del brand visivamente, anche stilizzate)' : ''}
-${imageUrls.length ? `IMMAGINI DI RIFERIMENTO: ${imageUrls.length} (usa atmosfere/soggetti come ispirazione — non copiarle letteralmente)` : ''}
+RENDERING: ${rt}
+${logoUrl ? 'LOGO FORNITO: sì (incorpora il nome del brand visivamente)' : ''}
+${imageUrls.length ? `IMMAGINI DI RIFERIMENTO: ${imageUrls.length} (usa come ispirazione, non copiarle)` : ''}${memberBlock}
 
 Progetta la sequenza di ${n} slide. Ritorna JSON con chiave "slides".`;
 
   const planResp = await postJson('https://api.openai.com/v1/chat/completions', {
     model: MODEL_TEXT,
     messages: [
-      { role: 'system', content: LEDWALL_SYSTEM_PROMPT.replace('STILE', style) },
+      { role: 'system', content: buildLedwallSystemPrompt(style, rt) },
       { role: 'user', content: userPlanPrompt }
     ],
     response_format: { type: 'json_object' },
