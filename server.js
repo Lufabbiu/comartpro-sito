@@ -13,7 +13,7 @@ const crypto = require('crypto');
 const { formidable } = require('formidable');
 const { Pool } = require('pg');
 const { runSync, geocodePending } = require('./sync');
-const { generateDraft, generateImage } = require('./ai');
+const { generateDraft, generateImage, generateLedwallCampaign } = require('./ai');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -232,6 +232,23 @@ function serveFile(res, filePath) {
     res.end(data);
   });
 }
+// Rate limit ledwall demo: max 3 campagne per IP per ora (in-memory)
+const ledwallHits = new Map();
+function ledwallRateOk(ip) {
+  const now = Date.now();
+  const WINDOW_MS = 60 * 60 * 1000;
+  const MAX = 3;
+  const hits = (ledwallHits.get(ip) || []).filter(t => now - t < WINDOW_MS);
+  if (hits.length >= MAX) { ledwallHits.set(ip, hits); return false; }
+  hits.push(now);
+  ledwallHits.set(ip, hits);
+  if (ledwallHits.size > 500) {
+    const cutoff = now - WINDOW_MS;
+    for (const [k, v] of ledwallHits) if (!v.some(t => t > cutoff)) ledwallHits.delete(k);
+  }
+  return true;
+}
+
 async function serveMedia(res, id) {
   if (!id || id.includes('/')) { res.writeHead(404); return res.end('Not found'); }
   try {
@@ -283,6 +300,19 @@ async function handleApi(req, res, url) {
   if (url.pathname === '/api/projects' && method === 'GET') {
     const { rows } = await pool.query('SELECT * FROM projects ORDER BY sort_order ASC, created_at ASC');
     return json(res, 200, rows);
+  }
+
+  if (url.pathname === '/api/ai/ledwall-campaign' && method === 'POST') {
+    const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString().split(',')[0].trim();
+    if (!ledwallRateOk(ip)) return json(res, 429, { error: 'Troppe richieste. Riprova fra qualche minuto.' });
+    try {
+      const body = await readJsonBody(req);
+      const result = await generateLedwallCampaign(body, pool);
+      return json(res, 200, result);
+    } catch (e) {
+      console.error('[ledwall-campaign error]', e.message, e.stack);
+      return json(res, 500, { error: e.message });
+    }
   }
   if (url.pathname === '/api/members' && method === 'GET') {
     const q = (url.searchParams.get('q') || '').trim();

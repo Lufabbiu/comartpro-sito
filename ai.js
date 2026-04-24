@@ -192,4 +192,103 @@ async function generateImage(prompt, pool) {
   return { url: `/uploads/${id}`, prompt };
 }
 
-module.exports = { generateDraft, generateImage };
+/* ——————————————————————————————————————————
+   LED WALL CAMPAIGN — genera N slide verticali
+   coerenti a partire da brief cliente
+   —————————————————————————————————————————— */
+
+const LEDWALL_SYSTEM_PROMPT = `Sei un direttore creativo che progetta campagne pubblicitarie per LED wall outdoor verticali (formato portrait 2:3, aspetto 1024×1536) installati nelle piazze dei paesi del Basso Salento (Alessano, Montesardo, Puglia).
+
+OBIETTIVO
+Pianificare una sequenza di slide coerenti che raccontino un'operazione di marketing per un'attività locale. Il LED wall è visto a distanza, i passanti hanno pochi secondi per leggere: tipografia grande, contrasto alto, un concetto per slide.
+
+STRUTTURA CAMPAGNA
+- Slide 1: apertura/brand (nome attività + tagline o hook visivo)
+- Slide centrali: offerta, prodotto, servizio, narrazione
+- Slide finale: call to action chiara (orari / indirizzo / contatto / data evento)
+
+STILE
+Evita estetica "AI generica". Preferisci: illustrazioni pulite, fotografia editoriale, composizioni tipografiche forti, palette coerente. Rispetta lo stile richiesto dal brief ("${/* injected */ 'STILE'}").
+
+OUTPUT
+JSON con chiave "slides" = array di oggetti. Ogni oggetto:
+{
+  "title": "didascalia italiana breve (max 8 parole, descrive la slide)",
+  "prompt": "prompt dettagliato in INGLESE per gpt-image-1; include: vertical portrait 2:3 composition, literal on-screen text in italian (scrivilo in virgolette), graphic style, color palette, mood, business name, 'Alessano Salento' come contesto; bold outdoor-readable typography"
+}
+
+Nessun testo prima o dopo il JSON. Nessun markdown fence.`;
+
+async function generateLedwallCampaign({ brief = '', businessName = '', logoUrl = '', imageUrls = [], numSlides = 4, style = 'contemporaneo italiano', rotationMs = 5000 }, pool) {
+  if (!API_KEY) throw new Error('OPENAI_API_KEY non configurata');
+  if (!pool) throw new Error('DB pool richiesto');
+  if (!brief.trim()) throw new Error('Brief mancante');
+  if (!businessName.trim()) throw new Error('Nome attività mancante');
+
+  const n = Math.min(Math.max(parseInt(numSlides) || 4, 2), 6);
+
+  // 1. PIANIFICAZIONE: gpt-4o-mini scrive N prompt coerenti
+  const userPlanPrompt = `BUSINESS: ${businessName}
+BRIEF CLIENTE: ${brief}
+SLIDE RICHIESTE: ${n}
+STILE: ${style}
+${logoUrl ? 'LOGO FORNITO: sì (suggerire di incorporare il nome/lettere del brand visivamente, anche stilizzate)' : ''}
+${imageUrls.length ? `IMMAGINI DI RIFERIMENTO: ${imageUrls.length} (usa atmosfere/soggetti come ispirazione — non copiarle letteralmente)` : ''}
+
+Progetta la sequenza di ${n} slide. Ritorna JSON con chiave "slides".`;
+
+  const planResp = await postJson('https://api.openai.com/v1/chat/completions', {
+    model: MODEL_TEXT,
+    messages: [
+      { role: 'system', content: LEDWALL_SYSTEM_PROMPT.replace('STILE', style) },
+      { role: 'user', content: userPlanPrompt }
+    ],
+    response_format: { type: 'json_object' },
+    temperature: 0.85,
+    max_tokens: 2500
+  }, API_KEY);
+
+  const planContent = planResp.choices?.[0]?.message?.content;
+  if (!planContent) throw new Error('Piano campagna vuoto');
+  let plan;
+  try { plan = JSON.parse(planContent); }
+  catch (e) { throw new Error('Piano JSON non valido: ' + planContent.slice(0, 200)); }
+
+  const slides = Array.isArray(plan) ? plan : (plan.slides || plan.campaign || plan.items || []);
+  if (!slides.length) throw new Error('AI non ha prodotto slide utilizzabili');
+
+  // 2. GENERAZIONE IMMAGINI: gpt-image-1 in parallelo (max 6 per limitare rate)
+  const results = await Promise.all(slides.slice(0, n).map(async (s, i) => {
+    const prompt = String(s.prompt || s.description || s.text || '').slice(0, 4000);
+    const title = s.title || s.caption || `Slide ${i + 1}`;
+    if (!prompt) return { error: 'prompt mancante', title };
+    try {
+      const imgResp = await postJson('https://api.openai.com/v1/images/generations', {
+        model: MODEL_IMAGE,
+        prompt,
+        size: '1024x1536',
+        n: 1,
+        quality: 'high'
+      }, API_KEY);
+      const b64 = imgResp.data?.[0]?.b64_json;
+      if (!b64) throw new Error('Nessuna immagine generata');
+      const buf = Buffer.from(b64, 'base64');
+      const id = `ad-${Date.now()}-${i}.png`;
+      await pool.query(
+        'INSERT INTO media (id, filename, mime, data, size) VALUES ($1,$2,$3,$4,$5)',
+        [id, id, 'image/png', buf, buf.length]
+      );
+      return { url: `/uploads/${id}`, title, prompt };
+    } catch (e) {
+      return { error: e.message, title, prompt };
+    }
+  }));
+
+  return {
+    slides: results,
+    businessName,
+    rotationMs: Math.min(Math.max(parseInt(rotationMs) || 5000, 1500), 20000)
+  };
+}
+
+module.exports = { generateDraft, generateImage, generateLedwallCampaign };

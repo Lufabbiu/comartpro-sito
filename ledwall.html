@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LED Wall — Prova a pubblicare · Com.Art.Pro APS ETS</title>
+<meta name="description" content="Simulazione del LED wall di Com.Art.Pro: descrivi la tua campagna, l'AI disegna le slide e le manda in loop sul display della piazza di Alessano.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="/public/logo.png?v=3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:ital,wght@0,400;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0e1a2b; --ink-soft:#2a3a55;
+    --paper:#f4efe4; --paper-alt:#ebe4d4;
+    --brand:#2d7a3e; --brand-dark:#1e5a2c; --brand-soft:#4a9f6b;
+    --gold:#c89b3c; --red:#b8372e;
+    --line:rgba(14,26,43,.12);
+
+    /* piazza palette */
+    --night-1:#0b0f1f;
+    --night-2:#13182e;
+    --night-3:#1d2341;
+    --dusk-coral:#b85a3a;
+    --dusk-amber:#d98847;
+    --dusk-violet:#2a1a3a;
+    --lamp-warm:#f5c77a;
+    --bezel:#060606;
+    --bezel-hi:#1c1c1e;
+    --stone:#d7cdbf;
+    --stone-dark:#a89b88;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);color:var(--ink);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  a{color:inherit}
+  img{max-width:100%;display:block}
+
+  /* ——— NAV (shared) ——— */
+  .nav{position:sticky;top:0;z-index:100;background:rgba(244,239,228,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem}
+  .brand{display:flex;align-items:center;gap:.8rem;text-decoration:none}
+  .brand .logo-wrap{width:48px;height:48px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+  .brand .logo-wrap img{width:100%;height:100%;object-fit:contain;padding:2px}
+  .brand .txt{line-height:1.1}
+  .brand .name{font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;letter-spacing:-.01em;color:var(--brand-dark)}
+  .brand .sub{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
+  .nav-links{display:flex;gap:2rem;list-style:none;align-items:center}
+  .nav-links a{text-decoration:none;font-size:.95rem;color:var(--ink-soft);font-weight:500;transition:color .2s}
+  .nav-links a:hover,.nav-links a.active{color:var(--brand-dark)}
+  .nav-cta{padding:.6rem 1.2rem;background:var(--brand);color:#fff!important;border-radius:999px;font-weight:600;font-size:.9rem;transition:background .2s}
+  .nav-cta:hover{background:var(--brand-dark)}
+
+  /* ——— SHARED PRIMITIVES ——— */
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:.6rem;
+    font-size:.75rem;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--brand-dark);font-weight:600;
+    padding:.45rem 1rem;background:rgba(45,122,62,.08);border-radius:999px;
+    margin-bottom:1.5rem;
+  }
+  .eyebrow::before{content:"";width:6px;height:6px;background:var(--brand);border-radius:50%}
+  .eyebrow.dark{background:rgba(244,239,228,.07);color:var(--gold)}
+  .eyebrow.dark::before{background:var(--gold)}
+  h1,h2,h3,h4{font-family:'Fraunces',serif;letter-spacing:-.02em}
+  h1 em, h2 em{font-style:italic;color:var(--brand-dark);font-weight:600}
+  .btn{
+    display:inline-flex;align-items:center;gap:.6rem;
+    padding:1rem 1.8rem;border-radius:999px;font-weight:600;
+    text-decoration:none;font-size:.98rem;border:0;cursor:pointer;font-family:inherit;
+    transition:background .2s, transform .2s, box-shadow .2s, color .2s, border-color .2s;
+  }
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.primary:hover:not(:disabled){background:var(--brand-dark);transform:translateY(-1px)}
+  .btn.primary:disabled{opacity:.55;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--brand);color:var(--brand-dark)}
+  .btn.small{padding:.6rem 1.1rem;font-size:.88rem}
+
+  /* ——— HERO ——— */
+  .hero{
+    padding:clamp(4rem,9vh,7rem) 2rem clamp(3rem,7vh,5rem);
+    position:relative;overflow:hidden;
+  }
+  .hero::before{
+    content:"";position:absolute;top:-120px;right:-140px;
+    width:520px;height:520px;border-radius:50%;
+    background:radial-gradient(circle,rgba(200,155,60,.14),transparent 70%);
+    pointer-events:none;
+  }
+  .hero-inner{
+    max-width:1200px;margin:0 auto;
+    display:grid;grid-template-columns:1.4fr .8fr;gap:4rem;align-items:center;
+    position:relative;
+  }
+  .hero h1{
+    font-size:clamp(2.4rem,5.2vw,4.2rem);line-height:1.02;font-weight:700;
+    margin-bottom:1.6rem;max-width:16ch;
+  }
+  .hero .lead{font-size:clamp(1.05rem,1.35vw,1.22rem);color:var(--ink-soft);max-width:48ch;margin-bottom:2.2rem}
+  .hero-ctas{display:flex;gap:1rem;flex-wrap:wrap}
+  .hero-teaser{
+    aspect-ratio:1/1.3;max-width:320px;margin-left:auto;
+    position:relative;perspective:800px;
+  }
+  .hero-teaser .mini-screen{
+    position:absolute;inset:0;border-radius:8px;
+    background:linear-gradient(135deg,var(--night-2),var(--night-3));
+    border:10px solid var(--bezel);
+    box-shadow:
+      0 30px 60px -20px rgba(0,0,0,.45),
+      0 0 60px rgba(45,122,62,.25),
+      inset 0 0 0 1px var(--bezel-hi);
+    overflow:hidden;
+    transform:rotateY(-6deg) rotateX(2deg);
+  }
+  .hero-teaser .mini-screen::before{
+    content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(ellipse at 30% 20%,rgba(200,155,60,.35),transparent 55%),
+      radial-gradient(ellipse at 70% 80%,rgba(45,122,62,.35),transparent 60%);
+    animation:hero-shimmer 6s ease-in-out infinite alternate;
+  }
+  .hero-teaser .mini-screen::after{
+    content:"LIVE";position:absolute;top:14px;left:14px;
+    font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.25em;
+    color:var(--lamp-warm);padding:.2rem .5rem;
+    border:1px solid rgba(245,199,122,.3);border-radius:3px;
+    background:rgba(0,0,0,.35);
+  }
+  @keyframes hero-shimmer{
+    0%{opacity:.7;transform:scale(1)}
+    100%{opacity:1;transform:scale(1.04)}
+  }
+
+  /* ——— FORM SECTION ——— */
+  .composer{background:var(--paper-alt);padding:clamp(4rem,8vh,6rem) 2rem;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .composer-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:.9fr 1.1fr;gap:5rem;align-items:start}
+  .composer-intro h2{font-size:clamp(1.9rem,3.5vw,2.8rem);line-height:1.1;margin-bottom:1.2rem}
+  .composer-intro p{color:var(--ink-soft);font-size:1.05rem;max-width:38ch;margin-bottom:1.8rem}
+  .composer-intro .tips{
+    list-style:none;padding:1.4rem;background:var(--paper);
+    border:1px solid var(--line);border-left:3px solid var(--gold);
+    border-radius:8px;font-size:.9rem;
+  }
+  .composer-intro .tips li{padding:.35rem 0;color:var(--ink-soft);display:flex;gap:.6rem;align-items:flex-start}
+  .composer-intro .tips li::before{content:"→";color:var(--gold);font-weight:700;flex-shrink:0}
+
+  form.composer-form{background:var(--paper);padding:2.2rem;border-radius:16px;border:1px solid var(--line);box-shadow:0 16px 40px -20px rgba(14,26,43,.1)}
+  .field{margin-bottom:1.4rem}
+  .field label{
+    display:block;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-soft);font-weight:700;margin-bottom:.45rem;
+  }
+  .field .hint{font-size:.78rem;color:var(--ink-soft);font-weight:400;letter-spacing:0;text-transform:none;margin-top:.35rem;display:block}
+  .field input[type=text],.field textarea,.field select{
+    width:100%;padding:.85rem 1rem;border:1px solid var(--line);
+    background:var(--paper-alt);border-radius:10px;
+    font-family:inherit;font-size:.95rem;color:var(--ink);
+    transition:border-color .2s, background .2s;
+  }
+  .field input:focus,.field textarea:focus,.field select:focus{
+    outline:0;border-color:var(--brand);background:var(--paper);
+  }
+  .field textarea{resize:vertical;min-height:110px}
+  .field.inline-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .field-upload{
+    display:block;padding:1rem 1.2rem;border:1px dashed var(--line);
+    background:var(--paper-alt);border-radius:10px;cursor:pointer;
+    font-size:.88rem;color:var(--ink-soft);transition:border-color .2s;
+  }
+  .field-upload:hover{border-color:var(--brand)}
+  .field-upload input{display:none}
+  .field-upload .fu-icon{display:inline-block;margin-right:.5rem;color:var(--brand-dark);font-weight:700}
+  .field-upload .fu-done{color:var(--brand-dark);font-weight:600}
+  .field-upload .fu-thumbs{display:flex;gap:.4rem;margin-top:.6rem;flex-wrap:wrap}
+  .field-upload .fu-thumbs img{width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
+  .form-actions{margin-top:1.8rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
+  .form-actions .meta{font-size:.78rem;color:var(--ink-soft)}
+  .alert{padding:.9rem 1.1rem;border-radius:8px;font-size:.9rem;margin-top:1rem}
+  .alert.err{background:rgba(184,55,46,.08);color:var(--red);border:1px solid rgba(184,55,46,.2)}
+  .alert.info{background:rgba(45,122,62,.08);color:var(--brand-dark);border:1px solid rgba(45,122,62,.2)}
+
+  /* ——— PIAZZA SCENE ——— */
+  .piazza-section{
+    background:var(--ink);color:var(--paper);
+    padding:clamp(4rem,7vh,6rem) 0 clamp(3rem,5vh,4rem);
+    position:relative;overflow:hidden;
+  }
+  .piazza-lead{max-width:1200px;margin:0 auto clamp(2rem,4vh,3rem);padding:0 2rem;text-align:center}
+  .piazza-lead .eyebrow{background:rgba(244,239,228,.07);color:var(--gold)}
+  .piazza-lead .eyebrow::before{background:var(--gold)}
+  .piazza-lead h2{color:var(--paper);font-size:clamp(1.6rem,2.8vw,2.3rem);line-height:1.15;margin-bottom:.6rem}
+  .piazza-lead h2 em{color:var(--gold)}
+  .piazza-lead p{color:rgba(244,239,228,.6);font-size:.95rem;max-width:50ch;margin:0 auto}
+
+  .piazza{
+    position:relative;margin:0 auto;
+    max-width:1400px;
+    aspect-ratio:16/10;
+    min-height:480px;
+    overflow:hidden;
+    isolation:isolate;
+    background:
+      /* sky gradient */
+      linear-gradient(to bottom,
+        var(--night-1) 0%,
+        var(--night-2) 22%,
+        var(--dusk-violet) 42%,
+        var(--dusk-coral) 60%,
+        var(--dusk-amber) 70%,
+        #120d14 78%,
+        #0a0a10 100%);
+  }
+  /* stars */
+  .piazza::before{
+    content:"";position:absolute;inset:0;
+    background-image:
+      radial-gradient(1px 1px at 15% 12%, rgba(255,255,255,.8), transparent 50%),
+      radial-gradient(1px 1px at 32% 8%, rgba(255,255,255,.5), transparent 50%),
+      radial-gradient(1px 1px at 48% 18%, rgba(255,255,255,.7), transparent 50%),
+      radial-gradient(1px 1px at 67% 10%, rgba(255,255,255,.4), transparent 50%),
+      radial-gradient(1px 1px at 82% 14%, rgba(255,255,255,.6), transparent 50%),
+      radial-gradient(1px 1px at 92% 6%, rgba(255,255,255,.5), transparent 50%);
+    pointer-events:none;
+    animation:star-twinkle 4s ease-in-out infinite alternate;
+  }
+  @keyframes star-twinkle{0%{opacity:.65}100%{opacity:1}}
+
+  /* distant buildings silhouette via inline svg background */
+  .piazza-buildings{
+    position:absolute;left:0;right:0;bottom:28%;
+    height:32%;z-index:2;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 300' preserveAspectRatio='xMidYEnd slice'><path fill='%23090c18' d='M0,300 L0,190 L70,190 L70,230 L130,230 L130,170 L200,170 L200,200 L270,200 L270,130 L340,130 L350,110 L360,130 L420,130 L420,160 L490,160 L490,220 L560,220 L560,150 L620,150 L620,110 L690,110 L700,90 L710,110 L770,110 L770,150 L840,150 L840,100 L900,100 L910,80 L920,100 L970,100 L970,180 L1040,180 L1040,210 L1110,210 L1110,140 L1180,140 L1180,180 L1250,180 L1250,120 L1320,120 L1330,100 L1340,120 L1400,120 L1400,170 L1470,170 L1470,200 L1540,200 L1540,150 L1600,150 L1600,300 Z'/><g fill='%23f5c77a' opacity='.75'><rect x='90' y='210' width='5' height='8'/><rect x='104' y='210' width='5' height='8'/><rect x='155' y='195' width='4' height='6'/><rect x='300' y='160' width='4' height='7'/><rect x='315' y='160' width='4' height='7'/><rect x='450' y='140' width='4' height='6'/><rect x='460' y='140' width='4' height='6'/><rect x='580' y='175' width='4' height='6'/><rect x='730' y='135' width='4' height='6'/><rect x='870' y='120' width='4' height='7'/><rect x='885' y='120' width='4' height='7'/><rect x='1060' y='195' width='4' height='6'/><rect x='1125' y='165' width='4' height='6'/><rect x='1200' y='155' width='4' height='6'/><rect x='1365' y='135' width='4' height='7'/><rect x='1485' y='180' width='4' height='6'/></g></svg>");
+    background-repeat:no-repeat;background-size:cover;background-position:bottom;
+    opacity:.95;
+    filter:drop-shadow(0 -20px 30px rgba(200,90,58,.08));
+  }
+
+  /* ground / cobblestones */
+  .piazza-ground{
+    position:absolute;left:0;right:0;bottom:0;
+    height:28%;z-index:3;
+    background:
+      linear-gradient(to bottom,
+        #15131b 0%,
+        #0a0810 60%,
+        #04030a 100%);
+  }
+  .piazza-ground::before{
+    content:"";position:absolute;inset:0;
+    background-image:
+      radial-gradient(circle at 10% 40%, rgba(255,255,255,.025) 1px, transparent 2px),
+      radial-gradient(circle at 30% 60%, rgba(255,255,255,.03) 1px, transparent 2px),
+      radial-gradient(circle at 50% 30%, rgba(255,255,255,.02) 1px, transparent 2px),
+      radial-gradient(circle at 70% 70%, rgba(255,255,255,.025) 1px, transparent 2px),
+      radial-gradient(circle at 90% 50%, rgba(255,255,255,.02) 1px, transparent 2px);
+    background-size:28px 28px, 32px 32px, 36px 36px, 30px 30px, 34px 34px;
+    opacity:.8;
+  }
+  /* pool of light from LED wall on ground */
+  .piazza-ground::after{
+    content:"";position:absolute;
+    left:50%;bottom:0;width:55%;height:130%;
+    transform:translateX(-50%);
+    background:radial-gradient(ellipse at center top, rgba(245,199,122,.28), transparent 60%);
+    filter:blur(6px);
+    mix-blend-mode:screen;
+    pointer-events:none;
+  }
+
+  /* street lamps */
+  .piazza-lamp{position:absolute;z-index:4;bottom:26%;width:40px}
+  .piazza-lamp.left{left:8%}
+  .piazza-lamp.right{right:8%}
+  .piazza-lamp .pole{
+    width:2px;height:110px;background:linear-gradient(to bottom,#2a2a30,#0f0f15);
+    margin:0 auto;position:relative;
+  }
+  .piazza-lamp .head{
+    position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+    width:24px;height:14px;
+    background:radial-gradient(ellipse at top,#f5c77a 0%,#d98c3a 60%,#5a3818 100%);
+    border-radius:50% 50% 20% 20%;
+    box-shadow:0 0 40px 8px rgba(245,199,122,.35),0 0 80px 20px rgba(245,199,122,.15);
+    animation:lamp-flicker 4s ease-in-out infinite;
+  }
+  .piazza-lamp.right .head{animation-delay:-1.8s}
+  @keyframes lamp-flicker{
+    0%,100%{filter:brightness(1)}
+    45%{filter:brightness(1.08)}
+    50%{filter:brightness(.88)}
+    55%{filter:brightness(1.05)}
+  }
+
+  /* LED WALL UNIT */
+  .ledwall-unit{
+    position:absolute;
+    left:50%;top:5%;
+    transform:translateX(-50%);
+    width:clamp(180px,18vw,260px);
+    z-index:5;
+    display:flex;flex-direction:column;align-items:center;gap:10px;
+    filter:drop-shadow(0 20px 40px rgba(0,0,0,.55));
+  }
+  .civic-plate{
+    background:linear-gradient(180deg,var(--stone) 0%,var(--stone-dark) 100%);
+    color:#3a2f22;
+    padding:.5rem 1rem .55rem;
+    font-family:'Fraunces',serif;
+    font-size:.72rem;letter-spacing:.32em;font-weight:700;
+    text-transform:uppercase;
+    display:flex;align-items:center;gap:.6rem;
+    border-radius:3px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.4),
+      inset 0 -1px 0 rgba(0,0,0,.25),
+      0 2px 4px rgba(0,0,0,.4);
+    text-shadow:0 1px 0 rgba(255,255,255,.2);
+    white-space:nowrap;
+  }
+  .civic-plate svg{flex-shrink:0;opacity:.85}
+  .ledwall-frame{
+    width:100%;aspect-ratio:1/2;
+    background:linear-gradient(180deg,var(--bezel-hi),var(--bezel));
+    border-radius:6px;
+    padding:6px;position:relative;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.05) inset,
+      0 0 50px 10px rgba(45,122,62,.18),
+      0 30px 60px -20px rgba(0,0,0,.7);
+  }
+  /* mounting screws */
+  .ledwall-frame::before,.ledwall-frame::after{
+    content:"";position:absolute;width:4px;height:4px;border-radius:50%;
+    background:radial-gradient(circle,#555,#111);
+    box-shadow:0 0 2px rgba(255,255,255,.2) inset;
+  }
+  .ledwall-frame::before{top:4px;left:4px}
+  .ledwall-frame::after{top:4px;right:4px}
+  .ledwall-screen{
+    position:relative;width:100%;height:100%;
+    background:#000;overflow:hidden;border-radius:2px;
+    box-shadow:inset 0 0 30px rgba(0,0,0,.8);
+  }
+  .ledwall-screen .slide{
+    position:absolute;inset:0;width:100%;height:100%;
+    object-fit:cover;opacity:0;
+    transition:opacity 1.2s ease-in-out;
+    pointer-events:none;
+  }
+  .ledwall-screen .slide.active{opacity:1}
+  .ledwall-screen .screen-placeholder{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:.6rem;padding:1rem;text-align:center;
+    background:
+      radial-gradient(circle at 30% 30%,rgba(45,122,62,.28),transparent 60%),
+      radial-gradient(circle at 70% 70%,rgba(200,155,60,.22),transparent 60%),
+      #040812;
+    color:rgba(244,239,228,.6);
+    font-family:'JetBrains Mono',monospace;
+    font-size:.68rem;letter-spacing:.28em;text-transform:uppercase;
+    line-height:1.6;
+  }
+  .ledwall-screen .screen-placeholder .dot{
+    display:inline-block;width:6px;height:6px;border-radius:50%;
+    background:var(--brand-soft);
+    box-shadow:0 0 10px var(--brand-soft);
+    animation:placeholder-pulse 2s ease-in-out infinite;
+  }
+  @keyframes placeholder-pulse{
+    0%,100%{opacity:.4;transform:scale(.85)}
+    50%{opacity:1;transform:scale(1.15)}
+  }
+  .ledwall-screen .screen-loading{
+    position:absolute;inset:0;z-index:3;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:.8rem;padding:1rem;text-align:center;
+    background:linear-gradient(135deg,#050815,#0d1328);
+    color:rgba(244,239,228,.8);
+  }
+  .screen-loading .spinner{
+    width:28px;height:28px;border:2px solid rgba(245,199,122,.2);
+    border-top-color:var(--gold);border-radius:50%;
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .screen-loading .msg{
+    font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.2em;
+    text-transform:uppercase;color:rgba(244,239,228,.75);
+    max-width:90%;min-height:2.4em;
+  }
+  .brand-plate{
+    background:linear-gradient(180deg,#0d1020,#040510);
+    color:rgba(244,239,228,.85);
+    padding:.5rem .8rem;
+    display:flex;align-items:center;gap:.55rem;
+    border-radius:3px;border:1px solid rgba(244,239,228,.08);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .brand-plate .logo-mini{
+    width:18px;height:18px;border-radius:50%;background:var(--brand);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .brand-plate .logo-mini img{width:100%;height:100%;object-fit:contain;padding:1px}
+  .brand-plate .bp-text{font-family:'Fraunces',serif;font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;font-weight:600}
+
+  /* grain overlay */
+  .piazza-grain{
+    position:absolute;inset:0;z-index:20;pointer-events:none;
+    mix-blend-mode:overlay;opacity:.35;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    background-size:120px 120px;
+  }
+  /* vignette */
+  .piazza-vignette{
+    position:absolute;inset:0;z-index:21;pointer-events:none;
+    background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.5) 100%);
+  }
+
+  /* ——— CONTROLS + SLIDES GRID ——— */
+  .player-shell{
+    max-width:900px;margin:2.2rem auto 0;padding:0 2rem;
+    display:flex;flex-direction:column;gap:1.2rem;align-items:center;
+  }
+  .player-controls{
+    display:flex;gap:.6rem;align-items:center;
+    background:rgba(244,239,228,.05);border:1px solid rgba(244,239,228,.1);
+    padding:.5rem;border-radius:999px;backdrop-filter:blur(10px);
+  }
+  .player-btn{
+    width:42px;height:42px;border-radius:50%;border:0;cursor:pointer;
+    background:transparent;color:var(--paper);
+    display:flex;align-items:center;justify-content:center;
+    transition:background .2s, color .2s;
+  }
+  .player-btn:hover:not(:disabled){background:rgba(244,239,228,.1)}
+  .player-btn:disabled{opacity:.35;cursor:not-allowed}
+  .player-btn.primary{background:var(--gold);color:var(--ink)}
+  .player-btn.primary:hover:not(:disabled){background:#e0b14a}
+  .player-progress{
+    display:flex;gap:.4rem;padding:0 .8rem;align-items:center;
+  }
+  .player-progress .pdot{
+    width:6px;height:6px;border-radius:50%;
+    background:rgba(244,239,228,.25);transition:all .3s;cursor:pointer;border:0;padding:0;
+  }
+  .player-progress .pdot.active{background:var(--gold);width:22px;border-radius:999px}
+  .player-counter{
+    font-family:'JetBrains Mono',monospace;font-size:.78rem;letter-spacing:.15em;
+    color:rgba(244,239,228,.7);padding:0 .8rem;
+  }
+  .player-timer{
+    font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.1em;
+    color:rgba(244,239,228,.5);
+  }
+
+  .slides-grid{
+    width:100%;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:1rem;margin-top:.6rem;
+  }
+  .slide-card{
+    background:rgba(244,239,228,.04);border:1px solid rgba(244,239,228,.08);
+    border-radius:10px;overflow:hidden;cursor:pointer;
+    transition:all .2s;display:flex;flex-direction:column;
+  }
+  .slide-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+  .slide-card.active{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+  .slide-card .tk{aspect-ratio:2/3;background:#000;overflow:hidden;position:relative}
+  .slide-card .tk img{width:100%;height:100%;object-fit:cover}
+  .slide-card .tk .n{
+    position:absolute;top:6px;left:6px;
+    font-family:'JetBrains Mono',monospace;font-size:.62rem;
+    padding:.15rem .4rem;background:rgba(0,0,0,.65);color:var(--gold);
+    border-radius:3px;letter-spacing:.1em;
+  }
+  .slide-card .sc-body{padding:.6rem .7rem .8rem;display:flex;flex-direction:column;gap:.4rem;flex:1}
+  .slide-card .sc-title{font-size:.78rem;color:var(--paper);font-weight:500;line-height:1.3}
+  .slide-card .sc-actions{margin-top:auto;display:flex;gap:.4rem}
+  .slide-card .sc-dl{
+    font-size:.68rem;text-transform:uppercase;letter-spacing:.15em;
+    color:rgba(244,239,228,.55);text-decoration:none;font-weight:600;
+  }
+  .slide-card .sc-dl:hover{color:var(--gold)}
+  .slide-card.err .tk{display:flex;align-items:center;justify-content:center;color:rgba(244,239,228,.3);font-size:.72rem;padding:1rem;text-align:center}
+
+  /* ——— HOW IT WORKS ——— */
+  .how{padding:clamp(4rem,8vh,6rem) 2rem;background:var(--paper)}
+  .how-inner{max-width:1200px;margin:0 auto}
+  .how-head{max-width:42rem;margin-bottom:3rem}
+  .how-head h2{font-size:clamp(1.9rem,3.5vw,2.8rem);line-height:1.1;margin-bottom:1rem}
+  .how-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
+  .how-step{
+    background:var(--paper-alt);border:1px solid var(--line);border-radius:14px;
+    padding:1.8rem;position:relative;
+  }
+  .how-step .num{
+    font-family:'Fraunces',serif;font-style:italic;
+    font-size:3rem;color:var(--brand);opacity:.35;
+    line-height:1;margin-bottom:.8rem;font-weight:600;
+  }
+  .how-step h3{font-size:1.1rem;font-weight:600;margin-bottom:.5rem;color:var(--ink)}
+  .how-step p{font-size:.92rem;color:var(--ink-soft);line-height:1.5}
+
+  /* ——— FOOTER (shared simplified) ——— */
+  footer{background:var(--ink);color:rgba(244,239,228,.7);padding:3rem 2rem 2rem}
+  .footer-inner{max-width:1200px;margin:0 auto;text-align:center;font-size:.85rem}
+  .footer-inner p{margin-bottom:.4rem}
+  .footer-inner a{color:var(--brand-soft);text-decoration:none;margin:0 .8rem}
+
+  /* ——— RESPONSIVE ——— */
+  @media (max-width:900px){
+    .nav-links{display:none}
+    .hero-inner{grid-template-columns:1fr;gap:2.5rem}
+    .hero-teaser{max-width:240px;margin:0 auto}
+    .composer-inner{grid-template-columns:1fr;gap:2.5rem}
+    .field.inline-grid{grid-template-columns:1fr}
+    .piazza{aspect-ratio:3/4;min-height:600px}
+    .ledwall-unit{width:clamp(150px,35vw,220px);top:7%}
+    .piazza-lamp{transform:scale(.75)}
+    .piazza-lamp.left{left:4%}
+    .piazza-lamp.right{right:4%}
+    .how-grid{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:560px){
+    .how-grid{grid-template-columns:1fr}
+    .slides-grid{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none!important;transition-duration:.01s!important}
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <span class="logo-wrap"><img src="/public/logo.png?v=3" alt="Com.Art.Pro"></span>
+      <div class="txt"><div class="name">Com.Art.Pro</div><div class="sub">APS ETS</div></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/#novita">Novità</a></li>
+      <li><a href="/#associazione">Associazione</a></li>
+      <li><a href="/progetti.html">Progetti</a></li>
+      <li><a href="/soci.html">Soci</a></li>
+      <li><a href="/ledwall.html" class="active">LED Wall</a></li>
+      <li><a href="/#contatti">Contatti</a></li>
+      <li><a class="nav-cta" href="/#iscrizione">Associati</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow">Progetto LED Wall · Demo</div>
+      <h1>Il tuo annuncio, sulla <em>piazza di Alessano</em>.</h1>
+      <p class="lead">Descrivi in poche righe cosa vuoi comunicare. L'AI disegna una sequenza di slide coerenti per la tua attività e le manda in loop sul LED wall verticale della piazza. Questa è una simulazione pubblica del servizio riservato ai soci.</p>
+      <div class="hero-ctas">
+        <a class="btn primary" href="#composer">Prova a pubblicare →</a>
+        <a class="btn ghost" href="#how">Come funziona</a>
+      </div>
+    </div>
+    <div class="hero-teaser" aria-hidden="true">
+      <div class="mini-screen"></div>
+    </div>
+  </div>
+</header>
+
+<!-- COMPOSER -->
+<section class="composer" id="composer">
+  <div class="composer-inner">
+    <div class="composer-intro">
+      <div class="eyebrow">Il brief</div>
+      <h2>Dicci <em>cosa</em> vuoi comunicare.</h2>
+      <p>Meno è meglio. Una frase chiara sull'operazione, il pubblico e il tono. L'AI pianifica la sequenza e disegna le slide in formato verticale outdoor — pronte a girare sulla piazza.</p>
+      <ul class="tips">
+        <li>Indica una <strong>promessa concreta</strong>: offerta, data, prodotto chiave.</li>
+        <li>Specifica il <strong>tono</strong>: caldo, istituzionale, ironico, serale.</li>
+        <li>Se hai un <strong>logo</strong> o una foto di riferimento, caricali.</li>
+        <li>Tre slide vanno bene, quattro raccontano meglio, cinque è già una storia.</li>
+      </ul>
+    </div>
+
+    <form class="composer-form" id="campaignForm" novalidate>
+      <div class="field">
+        <label for="businessName">Nome dell'attività</label>
+        <input id="businessName" name="businessName" type="text" required placeholder="Pasticceria Martinucci" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label for="brief">Descrizione della campagna</label>
+        <textarea id="brief" name="brief" required minlength="30" placeholder="Promozione di Pasqua: colombe artigianali al 20%, disponibili in negozio dal 1 al 14 aprile. Tono caldo, tradizionale, con richiamo al prodotto tipico salentino."></textarea>
+        <span class="hint">Minimo 30 caratteri. Più contesto dai, migliore è la coerenza delle slide.</span>
+      </div>
+
+      <div class="field">
+        <label for="logoFile">Logo (opzionale)</label>
+        <label class="field-upload" for="logoFile">
+          <span class="fu-icon">↑</span>
+          <span class="fu-label">Carica il logo dell'attività</span>
+          <input id="logoFile" name="logoFile" type="file" accept="image/*">
+        </label>
+      </div>
+
+      <div class="field">
+        <label for="refFiles">Immagini di riferimento (opzionale, fino a 3)</label>
+        <label class="field-upload" for="refFiles">
+          <span class="fu-icon">↑</span>
+          <span class="fu-label">Foto del prodotto, del locale, dell'evento…</span>
+          <input id="refFiles" name="refFiles" type="file" accept="image/*" multiple>
+        </label>
+      </div>
+
+      <div class="field inline-grid">
+        <div>
+          <label for="numSlides">Numero di slide</label>
+          <select id="numSlides" name="numSlides">
+            <option value="2">2 slide</option>
+            <option value="3">3 slide</option>
+            <option value="4" selected>4 slide</option>
+            <option value="5">5 slide</option>
+            <option value="6">6 slide</option>
+          </select>
+        </div>
+        <div>
+          <label for="rotationSeconds">Rotazione ogni</label>
+          <select id="rotationSeconds" name="rotationSeconds">
+            <option value="3">3 secondi</option>
+            <option value="5" selected>5 secondi</option>
+            <option value="8">8 secondi</option>
+            <option value="12">12 secondi</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="style">Stile grafico</label>
+        <select id="style" name="style">
+          <option value="editoriale minimale">Editoriale minimale</option>
+          <option value="vibrante pop" selected>Vibrante pop</option>
+          <option value="istituzionale classico">Istituzionale classico</option>
+          <option value="tipografico audace">Tipografico audace</option>
+          <option value="fotografico caldo">Fotografico caldo</option>
+          <option value="illustrato moderno">Illustrato moderno</option>
+        </select>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn primary" id="submitBtn">Genera la campagna</button>
+        <span class="meta" id="formMeta">~60-120 secondi · massimo 3 tentativi all'ora</span>
+      </div>
+      <div id="formAlert" aria-live="polite"></div>
+    </form>
+  </div>
+</section>
+
+<!-- PIAZZA -->
+<section class="piazza-section" id="piazza-section">
+  <div class="piazza-lead">
+    <div class="eyebrow dark">Anteprima live</div>
+    <h2>La piazza, <em>al crepuscolo</em>.</h2>
+    <p>Un 2×1 verticale in facciata al Palazzo Ducale. Qui sotto vedi come il tuo loop girerebbe ogni sera.</p>
+  </div>
+
+  <div class="piazza" id="piazza" aria-label="Simulazione LED wall nella piazza di Alessano">
+    <div class="piazza-buildings"></div>
+    <div class="piazza-ground"></div>
+
+    <div class="piazza-lamp left" aria-hidden="true">
+      <div class="head"></div>
+      <div class="pole"></div>
+    </div>
+    <div class="piazza-lamp right" aria-hidden="true">
+      <div class="head"></div>
+      <div class="pole"></div>
+    </div>
+
+    <div class="ledwall-unit">
+      <div class="civic-plate">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 2 L3 7 V20 H9 V14 H15 V20 H21 V7 Z"/>
+        </svg>
+        <span>Città di Alessano</span>
+      </div>
+      <div class="ledwall-frame">
+        <div class="ledwall-screen" id="screen">
+          <div class="screen-placeholder" id="placeholder">
+            <span class="dot"></span>
+            <span>In attesa<br>di una campagna</span>
+          </div>
+        </div>
+      </div>
+      <div class="brand-plate">
+        <span class="logo-mini"><img src="/public/logo.png?v=3" alt=""></span>
+        <span class="bp-text">Com.Art.Pro APS ETS</span>
+      </div>
+    </div>
+
+    <div class="piazza-grain" aria-hidden="true"></div>
+    <div class="piazza-vignette" aria-hidden="true"></div>
+  </div>
+
+  <div class="player-shell">
+    <div class="player-controls" role="group" aria-label="Controlli playback">
+      <button class="player-btn" id="prevBtn" aria-label="Slide precedente" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15 18 L9 12 L15 6 Z"/></svg>
+      </button>
+      <button class="player-btn primary" id="playBtn" aria-label="Pausa/Play" disabled>
+        <svg id="playIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="3" height="14"/><rect x="14" y="5" width="3" height="14"/></svg>
+      </button>
+      <button class="player-btn" id="nextBtn" aria-label="Slide successiva" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 6 L15 12 L9 18 Z"/></svg>
+      </button>
+      <div class="player-progress" id="progressDots"></div>
+      <div class="player-counter" id="counter">— / —</div>
+      <div class="player-timer" id="timer">00s</div>
+    </div>
+
+    <div class="slides-grid" id="slidesGrid"></div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section class="how" id="how">
+  <div class="how-inner">
+    <div class="how-head">
+      <div class="eyebrow">Come funziona</div>
+      <h2>Dal brief al <em>loop</em>, in quattro passi.</h2>
+    </div>
+    <div class="how-grid">
+      <div class="how-step">
+        <div class="num">01</div>
+        <h3>Scrivi il brief</h3>
+        <p>Due righe chiare: cosa comunichi, a chi, con che tono. Logo e foto opzionali come contesto visivo.</p>
+      </div>
+      <div class="how-step">
+        <div class="num">02</div>
+        <h3>L'AI pianifica</h3>
+        <p>GPT disegna la sequenza: apertura, offerta, dettaglio, call to action. Coerente con il tuo brand e lo stile scelto.</p>
+      </div>
+      <div class="how-step">
+        <div class="num">03</div>
+        <h3>Genera le slide</h3>
+        <p>Ogni slide viene creata in formato verticale outdoor — tipografia leggibile a distanza, contrasto alto, palette coordinata.</p>
+      </div>
+      <div class="how-step">
+        <div class="num">04</div>
+        <h3>Va in loop</h3>
+        <p>Sul LED wall della piazza, nelle fasce orarie prenotate. Qui sopra vedi l'anteprima esatta del comportamento.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <p>Com.Art.Pro APS ETS · Alessano (LE) · <a href="/">Home</a> · <a href="/progetti.html">Progetti</a> · <a href="/#contatti">Contatti</a></p>
+    <p style="margin-top:.8rem;opacity:.55">© 2026 · Tutti i diritti riservati</p>
+  </div>
+</footer>
+
+<script>
+  /* ——— STATE ——— */
+  const state = {
+    slides: [],
+    idx: 0,
+    playing: true,
+    rotationMs: 5000,
+    rotationTimer: null,
+    timerStart: 0,
+    timerTickId: null
+  };
+
+  /* ——— HELPERS ——— */
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => document.querySelectorAll(sel);
+  const esc = s => String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  async function uploadOne(file){
+    const fd = new FormData();
+    fd.append('file', file);
+    const r = await fetch('/api/upload', { method:'POST', body: fd });
+    if (!r.ok){
+      let msg = 'Upload fallito';
+      try { msg = (await r.json()).error || msg; } catch {}
+      throw new Error(msg);
+    }
+    return r.json();
+  }
+
+  /* ——— UPLOAD FIELDS UI ——— */
+  function setupUpload(inputId, multiple){
+    const input = document.getElementById(inputId);
+    const box = input.closest('.field-upload');
+    const label = box.querySelector('.fu-label');
+    const originalLabel = label.textContent;
+
+    input.addEventListener('change', () => {
+      const files = [...input.files].slice(0, multiple ? 3 : 1);
+      if (!files.length){ label.textContent = originalLabel; return; }
+      if (multiple){
+        label.innerHTML = `<span class="fu-done">✓ ${files.length} ${files.length===1?'file selezionato':'file selezionati'}</span>`;
+      } else {
+        label.innerHTML = `<span class="fu-done">✓ ${esc(files[0].name)}</span>`;
+      }
+      // thumb preview
+      const old = box.querySelector('.fu-thumbs');
+      if (old) old.remove();
+      const thumbs = document.createElement('div');
+      thumbs.className = 'fu-thumbs';
+      files.forEach(f => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const im = document.createElement('img');
+          im.src = e.target.result;
+          thumbs.appendChild(im);
+        };
+        reader.readAsDataURL(f);
+      });
+      box.appendChild(thumbs);
+    });
+  }
+  setupUpload('logoFile', false);
+  setupUpload('refFiles', true);
+
+  /* ——— LOADING MESSAGES ROTATOR ——— */
+  const LOADING_MESSAGES = [
+    'Analizzo il brief…',
+    'Pianifico la sequenza…',
+    'Scelgo la palette…',
+    'Compongo la slide 1…',
+    'Imposto la tipografia…',
+    'Compongo la slide 2…',
+    'Rifinisco i dettagli…',
+    'Compongo la slide 3…',
+    'Controllo la leggibilità outdoor…',
+    'Compongo la slide 4…',
+    'Assemblo il loop…',
+    'Ultimo tocco…'
+  ];
+  let loadingTimer = null;
+  function startLoading(){
+    const screen = $('#screen');
+    screen.innerHTML = `
+      <div class="screen-loading" role="status">
+        <div class="spinner"></div>
+        <div class="msg" id="loadingMsg">Analizzo il brief…</div>
+      </div>`;
+    let i = 0;
+    loadingTimer = setInterval(() => {
+      i = (i + 1) % LOADING_MESSAGES.length;
+      const el = document.getElementById('loadingMsg');
+      if (el) el.textContent = LOADING_MESSAGES[i];
+    }, 3500);
+  }
+  function stopLoading(){
+    if (loadingTimer){ clearInterval(loadingTimer); loadingTimer = null; }
+  }
+
+  /* ——— FORM SUBMIT ——— */
+  const form = $('#campaignForm');
+  const submitBtn = $('#submitBtn');
+  const formAlert = $('#formAlert');
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    formAlert.innerHTML = '';
+    const businessName = form.businessName.value.trim();
+    const brief = form.brief.value.trim();
+    if (brief.length < 30){
+      formAlert.innerHTML = '<div class="alert err">La descrizione deve avere almeno 30 caratteri.</div>';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Caricamento file…';
+    document.getElementById('piazza-section').scrollIntoView({ behavior:'smooth', block:'start' });
+
+    try {
+      // 1) upload logo
+      let logoUrl = '';
+      const logoFile = form.logoFile.files[0];
+      if (logoFile) {
+        const up = await uploadOne(logoFile);
+        logoUrl = up.url;
+      }
+
+      // 2) upload refs
+      const refFiles = [...form.refFiles.files].slice(0, 3);
+      const imageUrls = [];
+      for (const f of refFiles) {
+        const up = await uploadOne(f);
+        imageUrls.push(up.url);
+      }
+
+      // 3) call backend
+      submitBtn.textContent = 'Generazione in corso…';
+      startLoading();
+
+      const body = {
+        businessName,
+        brief,
+        logoUrl,
+        imageUrls,
+        numSlides: parseInt(form.numSlides.value, 10),
+        rotationMs: parseInt(form.rotationSeconds.value, 10) * 1000,
+        style: form.style.value
+      };
+
+      const ac = new AbortController();
+      const timeout = setTimeout(() => ac.abort(), 180000);
+      const resp = await fetch('/api/ai/ledwall-campaign', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify(body),
+        signal: ac.signal
+      });
+      clearTimeout(timeout);
+
+      stopLoading();
+
+      if (!resp.ok){
+        let msg = `HTTP ${resp.status}`;
+        try { msg = (await resp.json()).error || msg; } catch {}
+        throw new Error(msg);
+      }
+      const data = await resp.json();
+      if (!data.slides || !data.slides.length) throw new Error('Nessuna slide restituita');
+
+      renderCampaign(data);
+      formAlert.innerHTML = '<div class="alert info">Campagna pronta. Il loop sta girando sul LED wall.</div>';
+    } catch (err) {
+      stopLoading();
+      const screen = $('#screen');
+      screen.innerHTML = `
+        <div class="screen-placeholder">
+          <span class="dot" style="background:var(--red);box-shadow:0 0 10px var(--red)"></span>
+          <span>Errore<br>generazione</span>
+        </div>`;
+      formAlert.innerHTML = `<div class="alert err">${esc(err.message || 'Errore imprevisto')}</div>`;
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Rigenera';
+    }
+  });
+
+  /* ——— RENDER CAMPAIGN ——— */
+  function renderCampaign(data){
+    const valid = data.slides.filter(s => s.url);
+    if (!valid.length){
+      throw new Error('Tutte le slide sono fallite. Riprova con un brief più concreto.');
+    }
+    state.slides = valid;
+    state.idx = 0;
+    state.playing = true;
+    state.rotationMs = Math.min(Math.max(parseInt(data.rotationMs,10) || 5000, 1500), 20000);
+
+    const screen = $('#screen');
+    screen.innerHTML = state.slides.map((s, i) =>
+      `<img class="slide${i===0?' active':''}" src="${esc(s.url)}" alt="${esc(s.title||'slide '+(i+1))}" data-idx="${i}" loading="${i===0?'eager':'lazy'}">`
+    ).join('');
+
+    renderControls();
+    renderGrid();
+    scheduleRotation();
+  }
+
+  function renderControls(){
+    const dots = $('#progressDots');
+    dots.innerHTML = state.slides.map((_, i) =>
+      `<button class="pdot${i===state.idx?' active':''}" data-idx="${i}" aria-label="Vai alla slide ${i+1}"></button>`
+    ).join('');
+    $('#counter').textContent = String(state.idx+1).padStart(2,'0') + ' / ' + String(state.slides.length).padStart(2,'0');
+    $('#prevBtn').disabled = false;
+    $('#nextBtn').disabled = false;
+    $('#playBtn').disabled = false;
+    updatePlayIcon();
+
+    dots.querySelectorAll('.pdot').forEach(d => {
+      d.onclick = () => goTo(parseInt(d.dataset.idx,10));
+    });
+  }
+
+  function renderGrid(){
+    const grid = $('#slidesGrid');
+    grid.innerHTML = state.slides.map((s, i) =>
+      `<div class="slide-card${i===state.idx?' active':''}" data-idx="${i}">
+        <div class="tk"><span class="n">${String(i+1).padStart(2,'0')}</span><img src="${esc(s.url)}" alt=""></div>
+        <div class="sc-body">
+          <div class="sc-title">${esc(s.title || ('Slide '+(i+1)))}</div>
+          <div class="sc-actions">
+            <a class="sc-dl" href="${esc(s.url)}" download target="_blank" rel="noopener" onclick="event.stopPropagation()">Scarica PNG ↓</a>
+          </div>
+        </div>
+      </div>`
+    ).join('');
+    grid.querySelectorAll('.slide-card').forEach(c => {
+      c.onclick = () => goTo(parseInt(c.dataset.idx,10));
+    });
+  }
+
+  /* ——— PLAYBACK ——— */
+  function scheduleRotation(){
+    clearTimeout(state.rotationTimer);
+    clearInterval(state.timerTickId);
+    if (!state.playing || state.slides.length < 2) return;
+    state.timerStart = Date.now();
+    updateTimer();
+    state.timerTickId = setInterval(updateTimer, 100);
+    state.rotationTimer = setTimeout(() => next(), state.rotationMs);
+  }
+  function updateTimer(){
+    const el = $('#timer');
+    if (!el) return;
+    if (!state.playing){ el.textContent = 'PAUSA'; return; }
+    const remaining = Math.max(0, state.rotationMs - (Date.now() - state.timerStart));
+    el.textContent = (remaining/1000).toFixed(1).padStart(4,'0') + 's';
+  }
+  function activate(i){
+    state.idx = (i + state.slides.length) % state.slides.length;
+    $$('#screen .slide').forEach(el => {
+      el.classList.toggle('active', parseInt(el.dataset.idx,10) === state.idx);
+    });
+    $$('#progressDots .pdot').forEach(el => {
+      el.classList.toggle('active', parseInt(el.dataset.idx,10) === state.idx);
+    });
+    $$('#slidesGrid .slide-card').forEach(el => {
+      el.classList.toggle('active', parseInt(el.dataset.idx,10) === state.idx);
+    });
+    $('#counter').textContent = String(state.idx+1).padStart(2,'0') + ' / ' + String(state.slides.length).padStart(2,'0');
+  }
+  function next(){ activate(state.idx + 1); scheduleRotation(); }
+  function prev(){ activate(state.idx - 1); scheduleRotation(); }
+  function goTo(i){ activate(i); scheduleRotation(); }
+  function togglePlay(){
+    state.playing = !state.playing;
+    updatePlayIcon();
+    if (state.playing) scheduleRotation();
+    else { clearTimeout(state.rotationTimer); clearInterval(state.timerTickId); updateTimer(); }
+  }
+  function updatePlayIcon(){
+    const icon = $('#playIcon');
+    if (state.playing){
+      icon.innerHTML = '<rect x="7" y="5" width="3" height="14"/><rect x="14" y="5" width="3" height="14"/>';
+      $('#playBtn').setAttribute('aria-label', 'Pausa');
+    } else {
+      icon.innerHTML = '<path d="M7 5 L19 12 L7 19 Z"/>';
+      $('#playBtn').setAttribute('aria-label', 'Play');
+    }
+  }
+
+  $('#prevBtn').addEventListener('click', prev);
+  $('#nextBtn').addEventListener('click', next);
+  $('#playBtn').addEventListener('click', togglePlay);
+
+  // keyboard shortcuts when piazza in view
+  document.addEventListener('keydown', e => {
+    if (!state.slides.length) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'ArrowLeft'){ e.preventDefault(); prev(); }
+    else if (e.key === 'ArrowRight'){ e.preventDefault(); next(); }
+    else if (e.key === ' '){ e.preventDefault(); togglePlay(); }
+  });
+</script>
+</body>
+</html>
