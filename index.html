@@ -151,6 +151,80 @@
   h2 em{font-style:italic;color:var(--brand-dark);font-weight:600}
   .section-head p{font-size:1.15rem;color:var(--ink-soft);max-width:55ch}
 
+  /* ——— FEED NOVITÀ ——— */
+  .feed{background:var(--paper)}
+  .feed-list{display:grid;gap:1rem}
+  .feed-item{
+    background:var(--paper-alt);border:1px solid var(--line);border-radius:16px;
+    padding:1.5rem;display:grid;grid-template-columns:140px 1fr;gap:1.5rem;
+    transition:border-color .25s, transform .25s, box-shadow .25s;
+  }
+  .feed-item:hover{border-color:var(--brand-soft);box-shadow:0 12px 30px rgba(14,26,43,.06)}
+  .feed-item .thumb{
+    width:140px;height:140px;border-radius:12px;overflow:hidden;
+    background:var(--paper);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--brand-soft);font-size:2rem;text-decoration:none;
+    flex-shrink:0;
+  }
+  .feed-item .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .feed-item .body{min-width:0;display:flex;flex-direction:column;gap:.5rem}
+  .feed-item .meta{
+    display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;
+    font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;
+    color:var(--ink-soft);font-weight:600;
+  }
+  .feed-item .kind{
+    padding:.22rem .7rem;border-radius:4px;
+    color:var(--brand-dark);background:rgba(45,122,62,.1);
+  }
+  .feed-item .kind.event{color:#8a6a20;background:rgba(200,155,60,.15)}
+  .feed-item .kind.news{color:#8a2318;background:rgba(184,55,46,.1)}
+  .feed-item h3{
+    font-family:'Fraunces',serif;font-size:1.3rem;font-weight:600;
+    line-height:1.25;letter-spacing:-.01em;color:var(--ink);margin:0;
+  }
+  .feed-item h3 a{text-decoration:none;color:inherit;transition:color .2s}
+  .feed-item h3 a:hover{color:var(--brand-dark)}
+  .feed-item .summary{
+    font-size:.95rem;color:var(--ink-soft);line-height:1.5;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .feed-item .actions{
+    display:flex;gap:1rem;align-items:center;margin-top:.3rem;flex-wrap:wrap;
+  }
+  .feed-cta{
+    text-decoration:none;color:var(--brand-dark);font-weight:600;font-size:.92rem;
+    transition:gap .2s;display:inline-flex;align-items:center;gap:.3rem;
+  }
+  .feed-cta:hover{gap:.55rem}
+  .feed-share{
+    background:transparent;border:1px solid var(--line);
+    padding:.4rem 1rem;border-radius:999px;
+    font-family:inherit;font-size:.85rem;color:var(--ink-soft);font-weight:500;
+    cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:.4rem;
+  }
+  .feed-share:hover{border-color:var(--brand);color:var(--brand-dark)}
+  .feed-more{margin-top:2.5rem;text-align:center}
+  .feed-more .btn.outline{
+    background:transparent;color:var(--ink);border:1px solid var(--line);
+  }
+  .feed-more .btn.outline:hover{border-color:var(--brand);color:var(--brand-dark);transform:none}
+  .feed-empty{
+    padding:3rem;text-align:center;color:var(--ink-soft);
+    background:var(--paper-alt);border-radius:14px;border:1px dashed var(--line);
+  }
+  .feed-toast{
+    position:fixed;bottom:2rem;left:50%;
+    transform:translateX(-50%) translateY(150%);
+    background:var(--ink);color:var(--paper);
+    padding:.85rem 1.5rem;border-radius:999px;
+    font-size:.9rem;font-weight:500;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+    transition:transform .3s ease;z-index:1000;pointer-events:none;
+  }
+  .feed-toast.show{transform:translateX(-50%) translateY(0)}
+
   /* ——— VALORI (3 colonne) ——— */
   .valori{background:var(--paper-alt)}
   .valori-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem}
@@ -313,6 +387,10 @@
     .stats-inner{grid-template-columns:repeat(2,1fr);gap:1.5rem}
     .valori-grid,.categorie-grid,.docs-grid,.contatti-grid{grid-template-columns:1fr;gap:1.5rem}
     .footer-top{grid-template-columns:1fr;gap:2.5rem}
+    .feed-item{grid-template-columns:90px 1fr;padding:1rem;gap:1rem}
+    .feed-item .thumb{width:90px;height:90px;font-size:1.3rem;border-radius:10px}
+    .feed-item h3{font-size:1.1rem}
+    .feed-item .summary{-webkit-line-clamp:3}
   }
 </style>
 </head>
@@ -329,10 +407,10 @@
       </div>
     </a>
     <ul class="nav-links">
+      <li><a href="#novita">Novità</a></li>
       <li><a href="#associazione">Associazione</a></li>
       <li><a href="progetti.html">Progetti</a></li>
       <li><a href="soci.html">Soci</a></li>
-      <li><a href="#documenti">Documenti</a></li>
       <li><a href="#contatti">Contatti</a></li>
       <li><a class="nav-cta" href="#iscrizione">Associati</a></li>
     </ul>
@@ -367,6 +445,21 @@
     <div class="stat"><div class="n">2024</div><div class="l">Anno di fondazione</div></div>
   </div>
 </div>
+
+<!-- FEED NOVITÀ -->
+<section class="feed" id="novita">
+  <div class="section-inner">
+    <div class="section-head">
+      <div class="eyebrow">Ultime novità</div>
+      <h2>Cosa succede <em>nell'associazione</em>.</h2>
+      <p>Progetti, eventi e notizie dal direttivo Com.Art.Pro — dai più recenti ai meno recenti.</p>
+    </div>
+    <div class="feed-list" id="feedList">
+      <div class="feed-empty">Caricamento…</div>
+    </div>
+    <div class="feed-more" id="feedMore"></div>
+  </div>
+</section>
 
 <!-- VALORI -->
 <section class="valori" id="associazione">
@@ -617,6 +710,145 @@
     links.style.padding='1.5rem 2rem';
     links.style.borderBottom='1px solid var(--line)';
   });
+
+  /* ——— FEED NOVITÀ ——— */
+  const feedState = { items: [], shown: 6, step: 6 };
+  const KIND_LABEL = { project: 'Progetto', event: 'Evento', news: 'Notizia' };
+  const KIND_FALLBACK = { project: '◆', event: '📅', news: '📰' };
+
+  function escFeed(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+  function feedSortDate(kind, d){
+    if (kind === 'event' && d.date) return d.date;
+    return d.updated_at || d.created_at || d.date || null;
+  }
+  function formatFeedDate(iso){
+    if (!iso) return '';
+    const d = new Date(iso);
+    const now = new Date();
+    const diffMs = now - d;
+    const diffDays = Math.floor(diffMs / 86400000);
+    if (diffDays < 0) return d.toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'});
+    if (diffDays === 0) return 'Oggi';
+    if (diffDays === 1) return 'Ieri';
+    if (diffDays < 7) return diffDays + ' giorni fa';
+    return d.toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'});
+  }
+
+  async function loadFeed(){
+    try {
+      const [projects, events, news] = await Promise.all([
+        fetch('/api/projects').then(r=>r.json()).catch(()=>[]),
+        fetch('/api/events').then(r=>r.json()).catch(()=>[]),
+        fetch('/api/news').then(r=>r.json()).catch(()=>[])
+      ]);
+      const merged = [
+        ...projects.map(p=>({ kind:'project', raw:p, sortDate: feedSortDate('project', p) })),
+        ...events.map(e=>({ kind:'event', raw:e, sortDate: feedSortDate('event', e) })),
+        ...news.map(n=>({ kind:'news', raw:n, sortDate: feedSortDate('news', n) }))
+      ].filter(x => x.sortDate);
+      merged.sort((a,b) => new Date(b.sortDate) - new Date(a.sortDate));
+      feedState.items = merged;
+      renderFeed();
+    } catch (e) {
+      console.error('Feed load error:', e);
+      const list = document.getElementById('feedList');
+      if (list) list.innerHTML = '<div class="feed-empty">Errore caricamento novità.</div>';
+    }
+  }
+
+  function renderFeedItem(item){
+    const d = item.raw;
+    const kind = item.kind;
+    const url = '/dettaglio.html?type=' + kind + '&id=' + encodeURIComponent(d.id);
+    const title = d.title || d.name || '';
+    const summary = d.description || d.excerpt || '';
+    const cover = d.image || d.poster || d.teaser || '';
+    const when = formatFeedDate(item.sortDate);
+    return (
+      '<article class="feed-item">' +
+        '<a href="' + url + '" class="thumb" aria-label="' + escFeed(title) + '">' +
+          (cover ? '<img src="' + escFeed(cover) + '" alt="" loading="lazy">' : '<span>' + KIND_FALLBACK[kind] + '</span>') +
+        '</a>' +
+        '<div class="body">' +
+          '<div class="meta">' +
+            '<span class="kind ' + kind + '">' + KIND_LABEL[kind] + '</span>' +
+            (when ? '<span>' + escFeed(when) + '</span>' : '') +
+          '</div>' +
+          '<h3><a href="' + url + '">' + escFeed(title) + '</a></h3>' +
+          (summary ? '<p class="summary">' + escFeed(summary) + '</p>' : '') +
+          '<div class="actions">' +
+            '<a class="feed-cta" href="' + url + '">Leggi<span aria-hidden="true"> →</span></a>' +
+            '<button class="feed-share" type="button" ' +
+              'data-url="' + escFeed(url) + '" ' +
+              'data-title="' + escFeed(title) + '" ' +
+              'data-text="' + escFeed(summary) + '" ' +
+              'aria-label="Condividi ' + escFeed(title) + '">↗ Condividi</button>' +
+          '</div>' +
+        '</div>' +
+      '</article>'
+    );
+  }
+
+  function renderFeed(){
+    const list = document.getElementById('feedList');
+    const more = document.getElementById('feedMore');
+    if (!list) return;
+    if (!feedState.items.length){
+      list.innerHTML = '<div class="feed-empty">Ancora nessuna pubblicazione. Torna presto.</div>';
+      more.innerHTML = '';
+      return;
+    }
+    const slice = feedState.items.slice(0, feedState.shown);
+    list.innerHTML = slice.map(renderFeedItem).join('');
+    more.innerHTML = feedState.items.length > feedState.shown
+      ? '<button class="btn outline" id="feedMoreBtn" type="button">Mostra altri</button>'
+      : '';
+    bindShareButtons();
+    const moreBtn = document.getElementById('feedMoreBtn');
+    if (moreBtn) moreBtn.onclick = () => { feedState.shown += feedState.step; renderFeed(); };
+  }
+
+  function bindShareButtons(){
+    document.querySelectorAll('.feed-share').forEach(btn => {
+      btn.onclick = e => {
+        e.stopPropagation();
+        shareItem(btn.dataset.url, btn.dataset.title, btn.dataset.text);
+      };
+    });
+  }
+
+  async function shareItem(url, title, text){
+    const absUrl = new URL(url, location.origin).toString();
+    if (navigator.share){
+      try { await navigator.share({ title, text: text || title, url: absUrl }); return; }
+      catch (err) { if (err.name === 'AbortError') return; }
+    }
+    try {
+      await navigator.clipboard.writeText(absUrl);
+      showToast('Link copiato negli appunti');
+    } catch {
+      showToast('Impossibile copiare il link');
+    }
+  }
+
+  let toastTimer = null;
+  function showToast(msg){
+    let t = document.getElementById('feedToast');
+    if (!t){
+      t = document.createElement('div');
+      t.id = 'feedToast';
+      t.className = 'feed-toast';
+      t.setAttribute('role', 'status');
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    requestAnimationFrame(() => t.classList.add('show'));
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  loadFeed();
 </script>
 </body>
 </html>
