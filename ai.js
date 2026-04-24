@@ -203,41 +203,88 @@ const LEDWALL_RENDERING_GUIDE = {
   misto: 'Alterna due modalità: slide DISPARI (1, 3, 5) sono POSTER TIPOGRAFICI con testo grande in stile outdoor. Slide PARI (2, 4, 6) sono FOTOGRAFIE EDITORIALI realistiche (natural light, editorial) SENZA testo overlay. Mantieni la stessa palette e lo stesso mood visivo per far percepire la sequenza come unica campagna. Ogni prompt deve specificare in apertura il tipo ("Typographic poster:" o "Editorial photograph:").'
 };
 
-function buildLedwallSystemPrompt(style, renderingType){
+const LEDWALL_STRUCTURE_GUIDE = {
+  ad: `Campagna PUBBLICITARIA per un'attività locale.
+Struttura consigliata:
+- Slide 1: apertura brand (nome/hook visivo).
+- Slide centrali: offerta / prodotto / servizio / narrazione.
+- Slide finale: call to action con contatti (indirizzo, telefono, orari).`,
+  event: `Annuncio di EVENTO / CONVEGNO / OSPITATA / PRESENTAZIONE.
+Struttura consigliata:
+- Slide 1: "SAVE THE DATE" o tipo evento (1 parola chiave) + data grande.
+- Slide 2: titolo evento e relatori/ospiti principali.
+- Slide 3: luogo e ora (indirizzo pieno) + breve claim.
+- Slide 4: call to action (ingresso, info, organizzatori, sponsor se presenti).
+Priorità visiva: la DATA e il LUOGO devono essere leggibili a 20 metri. Se la modalità è fotografica, la data va su una slide-poster finale.`,
+  news: `Comunicazione di NOTIZIA / ANNUNCIO / AGGIORNAMENTO istituzionale o editoriale.
+Struttura consigliata:
+- Slide 1: occhiello/tag (es. "NOVITÀ", "COMUNICATO", "INAUGURAZIONE") e data.
+- Slide 2: headline forte (max 10 parole).
+- Slide 3: sommario/lead essenziale (2-3 righe).
+- Slide 4: firma/fonte + invito a saperne di più.`
+};
+
+function formatItalianDate(iso, includeTime) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return String(iso);
+  const weekday = d.toLocaleDateString('it-IT', { weekday: 'long' });
+  const day = d.getDate();
+  const month = d.toLocaleDateString('it-IT', { month: 'long' });
+  const year = d.getFullYear();
+  const base = `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${day} ${month} ${year}`;
+  if (!includeTime) return base;
+  const hh = d.getHours(), mm = d.getMinutes();
+  if (hh === 0 && mm === 0) return base;
+  return base + ` · ore ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+}
+
+function buildLedwallSystemPrompt(style, renderingType, contentType){
   const rendering = LEDWALL_RENDERING_GUIDE[renderingType] || LEDWALL_RENDERING_GUIDE.grafico;
-  return `Sei un direttore creativo che progetta campagne pubblicitarie per LED wall outdoor verticali (formato portrait 2:3, 1024×1536) installati nelle piazze dei paesi del Basso Salento (Alessano, Montesardo, Puglia).
+  const structure = LEDWALL_STRUCTURE_GUIDE[contentType] || LEDWALL_STRUCTURE_GUIDE.ad;
+  return `Sei un direttore creativo che progetta contenuti per LED wall outdoor verticali (formato portrait 2:3, 1024×1536) installati nelle piazze dei paesi del Basso Salento (Alessano, Montesardo, Puglia).
 
 OBIETTIVO
-Pianificare una sequenza di slide coerenti per un'operazione di marketing di un'attività locale. Il LED wall è visto a distanza: il passante ha pochi secondi per capire.
+Pianificare una sequenza di slide coerenti. Il LED wall è visto a distanza: il passante ha pochi secondi per capire. Testi grandi, contrasto alto, un concetto per slide.
 
-STRUTTURA CAMPAGNA
-- Slide 1: apertura/brand (nome attività o hook visivo forte).
-- Slide centrali: offerta, prodotto/servizio, narrazione.
-- Slide finale: call to action chiara (indirizzo / telefono / orari / data).
+TIPO DI CONTENUTO
+${structure}
 
 STILE VISIVO RICHIESTO: "${style}".
 
 MODALITÀ DI RENDERING
 ${rendering}
 
+REGOLE GENERALI
+- Se nei dati forniti compaiono DATE, LUOGHI, TELEFONI, INDIRIZZI, ORARI: usa i valori LETTERALMENTE (non inventare, non arrotondare).
+- Italiano corretto nei testi delle slide. Niente inglese sulle slide stesse, eccetto formule standard ("save the date", "open day") se esplicitamente richieste.
+- Evita estetica "AI generica". Niente volti deformati, niente tipografie illeggibili.
+
 OUTPUT
 JSON con chiave "slides" = array di oggetti. Ogni oggetto:
 {
   "title": "didascalia italiana breve (max 8 parole, descrive la slide)",
-  "prompt": "prompt dettagliato in INGLESE per gpt-image-1; include OBBLIGATORIAMENTE: (1) vertical portrait 2:3 composition; (2) se è poster: literal on-screen text in italian tra virgolette, bold outdoor-readable typography, scegliere font family coerente con lo stile; (3) se è fotografia editoriale: no text overlay, cinematic natural light, soggetto concreto; (4) palette e mood coerenti con lo stile '${style}'; (5) nome attività e territorio 'Alessano, Salento' come contesto quando pertinente"
+  "prompt": "prompt dettagliato in INGLESE per gpt-image-1; include OBBLIGATORIAMENTE: (1) vertical portrait 2:3 composition; (2) se è poster: literal on-screen text in italian tra virgolette, bold outdoor-readable typography, scegliere font family coerente con lo stile; (3) se è fotografia editoriale: no text overlay, cinematic natural light, soggetto concreto; (4) palette e mood coerenti con lo stile '${style}'"
 }
 
 Nessun testo prima o dopo il JSON. Nessun markdown fence.`;
 }
 
-async function generateLedwallCampaign({ brief = '', businessName = '', logoUrl = '', imageUrls = [], numSlides = 4, style = 'contemporaneo italiano', rotationMs = 5000, renderingType = 'grafico', memberInfo = null }, pool) {
+async function generateLedwallCampaign({
+  brief = '', businessName = '', logoUrl = '', imageUrls = [],
+  numSlides = 4, style = 'contemporaneo italiano', rotationMs = 5000,
+  renderingType = 'grafico', contentType = 'ad', memberInfo = null,
+  eventDate = '', eventLocation = '', organizers = '', sponsors = '', eventInfo = '',
+  newsDate = '', author = '', eyebrow = ''
+}, pool) {
   if (!API_KEY) throw new Error('OPENAI_API_KEY non configurata');
   if (!pool) throw new Error('DB pool richiesto');
   if (!brief.trim()) throw new Error('Brief mancante');
-  if (!businessName.trim()) throw new Error('Nome attività mancante');
+  if (!businessName.trim()) throw new Error('Nome attività / fonte mancante');
 
   const n = Math.min(Math.max(parseInt(numSlides) || 4, 2), 6);
   const rt = (renderingType in LEDWALL_RENDERING_GUIDE) ? renderingType : 'grafico';
+  const ct = (contentType in LEDWALL_STRUCTURE_GUIDE) ? contentType : 'ad';
 
   const memberBlock = memberInfo ? `
 
@@ -248,23 +295,54 @@ DATI SOCIO DA DATABASE (USA QUESTI CONTATTI REALI NELLE CTA DELLE SLIDE):
 - Telefono: ${memberInfo.phone || '—'}
 - Attività: ${memberInfo.profession || memberInfo.category || '—'}
 
-Quando una slide richiede un contatto, usa LITERALMENTE questi valori (non inventare). Se la modalità è "fotografico", la CTA con contatti va su UNA sola slide finale di tipo poster/info.` : '';
+Quando una slide richiede un contatto, usa LITERALMENTE questi valori (non inventare).` : '';
 
-  // 1. PIANIFICAZIONE: gpt-4o-mini scrive N prompt coerenti
-  const userPlanPrompt = `BUSINESS: ${businessName}
-BRIEF CLIENTE: ${brief}
+  // Dati strutturati per tipo
+  let structuredBlock = '';
+  if (ct === 'event') {
+    const dateIso = eventDate || '';
+    const dateHuman = formatItalianDate(dateIso, true);
+    structuredBlock = `
+
+DATI EVENTO (USA LETTERALMENTE QUESTI VALORI NEI TESTI DELLE SLIDE):
+- Titolo evento: ${businessName}
+- Data e ora (italiano leggibile): ${dateHuman || '—'}
+- Data ISO: ${dateIso || '—'}
+- Luogo: ${eventLocation || '—'}
+- Organizzatori: ${organizers || '—'}
+- Con il sostegno di: ${sponsors || '—'}
+- Info aggiuntive: ${eventInfo || '—'}
+
+La data e il luogo DEVONO apparire in modo grande e prominente in almeno una slide. Non inventare orari o indirizzi.`;
+  } else if (ct === 'news') {
+    const dateHuman = formatItalianDate(newsDate, false);
+    structuredBlock = `
+
+DATI NOTIZIA (USA LETTERALMENTE QUESTI VALORI):
+- Titolo: ${businessName}
+- Occhiello/tag: ${eyebrow || 'Comunicato'}
+- Data pubblicazione: ${dateHuman || '—'}
+- Firma/autore: ${author || '—'}
+
+Mantieni un registro giornalistico sobrio. L'occhiello va su slide 1, la data visibile in una slide tra le prime.`;
+  }
+
+  // 1. PIANIFICAZIONE
+  const userPlanPrompt = `TIPO CONTENUTO: ${ct.toUpperCase()}
+ENTITÀ/TITOLO: ${businessName}
+BRIEF: ${brief}
 SLIDE RICHIESTE: ${n}
 STILE: ${style}
 RENDERING: ${rt}
-${logoUrl ? 'LOGO FORNITO: sì (incorpora il nome del brand visivamente)' : ''}
-${imageUrls.length ? `IMMAGINI DI RIFERIMENTO: ${imageUrls.length} (usa come ispirazione, non copiarle)` : ''}${memberBlock}
+${logoUrl ? 'LOGO FORNITO: sì (incorpora il nome del brand visivamente se pertinente)' : ''}
+${imageUrls.length ? `IMMAGINI DI RIFERIMENTO: ${imageUrls.length} (usa come ispirazione, non copiarle)` : ''}${structuredBlock}${memberBlock}
 
-Progetta la sequenza di ${n} slide. Ritorna JSON con chiave "slides".`;
+Progetta la sequenza di ${n} slide coerente con il tipo "${ct}". Ritorna JSON con chiave "slides".`;
 
   const planResp = await postJson('https://api.openai.com/v1/chat/completions', {
     model: MODEL_TEXT,
     messages: [
-      { role: 'system', content: buildLedwallSystemPrompt(style, rt) },
+      { role: 'system', content: buildLedwallSystemPrompt(style, rt, ct) },
       { role: 'user', content: userPlanPrompt }
     ],
     response_format: { type: 'json_object' },

@@ -170,6 +170,21 @@
   }
   .field textarea{resize:vertical;min-height:110px}
   .field.inline-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .ctype-tabs{
+    display:flex;gap:.3rem;padding:.35rem;
+    background:var(--paper-alt);border:1px solid var(--line);border-radius:999px;
+    margin-bottom:1.5rem;
+  }
+  .ctype-tab{
+    flex:1;padding:.7rem .6rem;border-radius:999px;border:0;background:transparent;
+    cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:600;letter-spacing:.04em;
+    color:var(--ink-soft);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.4rem;
+  }
+  .ctype-tab:hover{color:var(--ink)}
+  .ctype-tab.active{background:var(--brand);color:#fff;box-shadow:0 4px 10px -4px rgba(45,122,62,.5)}
+  .ctype-tab svg{flex-shrink:0;opacity:.9}
+  .cond{display:none}
+  .cond.show{display:block}
   .field-upload{
     display:block;padding:1rem 1.2rem;border:1px dashed var(--line);
     background:var(--paper-alt);border-radius:10px;cursor:pointer;
@@ -613,15 +628,76 @@
     </div>
 
     <form class="composer-form" id="campaignForm" novalidate>
+      <div class="ctype-tabs" role="tablist" aria-label="Tipo di contenuto">
+        <button type="button" class="ctype-tab active" data-type="ad" role="tab" aria-selected="true">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5 H20 V19 H4 Z M7 9 H17 M7 13 H14" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          Pubblicità
+        </button>
+        <button type="button" class="ctype-tab" data-type="event" role="tab" aria-selected="false">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M5 6 H19 V20 H5 Z M5 10 H19 M9 3 V8 M15 3 V8" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          Evento
+        </button>
+        <button type="button" class="ctype-tab" data-type="news" role="tab" aria-selected="false">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6 H20 V19 H4 Z M8 10 H16 M8 13 H16 M8 16 H13" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          Notizia
+        </button>
+      </div>
+      <input type="hidden" name="contentType" id="contentType" value="ad">
+
       <div class="field">
-        <label for="businessName">Nome dell'attività</label>
+        <label for="businessName" id="entityLabel">Nome dell'attività</label>
         <input id="businessName" name="businessName" type="text" required placeholder="Pasticceria Martinucci" autocomplete="off">
+        <span class="hint" id="entityHint">Se corrisponde a un socio in directory, indirizzo e telefono vengono presi automaticamente.</span>
+      </div>
+
+      <div class="field cond" id="eventFields">
+        <div class="inline-grid">
+          <div>
+            <label for="eventDate">Data e ora evento</label>
+            <input id="eventDate" name="eventDate" type="datetime-local">
+          </div>
+          <div>
+            <label for="eventLocation">Luogo</label>
+            <input id="eventLocation" name="eventLocation" type="text" placeholder="Palazzo Ducale, Alessano">
+          </div>
+        </div>
+        <div class="inline-grid" style="margin-top:1rem">
+          <div>
+            <label for="organizers">Organizzatori</label>
+            <input id="organizers" name="organizers" type="text" placeholder="Com.Art.Pro · NarrAzioni">
+          </div>
+          <div>
+            <label for="sponsors">Con il sostegno di</label>
+            <input id="sponsors" name="sponsors" type="text" placeholder="Martinucci · Pedone Veicoli">
+          </div>
+        </div>
+        <div class="field" style="margin-top:1rem;margin-bottom:0">
+          <label for="eventInfo">Info aggiuntive</label>
+          <input id="eventInfo" name="eventInfo" type="text" placeholder="Ingresso libero · tel. 349.xxx">
+        </div>
+      </div>
+
+      <div class="field cond" id="newsFields">
+        <div class="inline-grid">
+          <div>
+            <label for="newsDate">Data pubblicazione</label>
+            <input id="newsDate" name="newsDate" type="date">
+          </div>
+          <div>
+            <label for="author">Firma/autore</label>
+            <input id="author" name="author" type="text" placeholder="Direttivo Com.Art.Pro">
+          </div>
+        </div>
+        <div class="field" style="margin-top:1rem">
+          <label for="eyebrow">Occhiello/tag (es. "Novità", "Comunicato")</label>
+          <input id="eyebrow" name="eyebrow" type="text" placeholder="Inaugurazione">
+        </div>
       </div>
 
       <div class="field">
-        <label for="brief">Descrizione della campagna</label>
+        <label for="brief" id="briefLabel">Descrizione della campagna</label>
         <textarea id="brief" name="brief" required minlength="30" placeholder="Promozione di Pasqua: colombe artigianali al 20%, disponibili in negozio dal 1 al 14 aprile. Tono caldo, tradizionale, con richiamo al prodotto tipico salentino."></textarea>
-        <span class="hint">Minimo 30 caratteri. Più contesto dai, migliore è la coerenza delle slide.</span>
+        <span class="hint" id="briefHint">Minimo 30 caratteri. Più contesto dai, migliore è la coerenza delle slide.</span>
       </div>
 
       <div class="field">
@@ -865,6 +941,62 @@
   setupUpload('logoFile', false);
   setupUpload('refFiles', true);
 
+  /* ——— CONTENT TYPE TABS ——— */
+  const typeConfig = {
+    ad: {
+      entityLabel: "Nome dell'attività",
+      entityPlaceholder: "Pasticceria Martinucci",
+      entityHint: "Se corrisponde a un socio in directory, indirizzo e telefono vengono presi automaticamente.",
+      briefLabel: "Descrizione della campagna",
+      briefPlaceholder: "Promozione di Pasqua: colombe artigianali al 20%, disponibili in negozio dal 1 al 14 aprile. Tono caldo, tradizionale, con richiamo al prodotto tipico salentino.",
+      briefHint: "Minimo 30 caratteri. Più contesto dai, migliore è la coerenza delle slide."
+    },
+    event: {
+      entityLabel: "Titolo dell'evento",
+      entityPlaceholder: "Nicola Gratteri presenta «Cartelli di Sangue»",
+      entityHint: "Indica il titolo pieno dell'evento così come deve apparire sulle slide.",
+      briefLabel: "Descrizione dell'evento",
+      briefPlaceholder: "Il Procuratore Nicola Gratteri presenta il libro dedicato alle rotte del narcotraffico. Dialoga con Federico Imperato, docente di Storia delle Relazioni Internazionali all'Università di Bari. Tono istituzionale ma caldo.",
+      briefHint: "Cosa succede, chi interviene, perché interessa il territorio. L'AI ne ricava le slide."
+    },
+    news: {
+      entityLabel: "Titolo della notizia",
+      entityPlaceholder: "Inaugurata la nuova sede di Com.Art.Pro",
+      entityHint: "Headline della notizia così come deve apparire sul LED wall.",
+      briefLabel: "Sommario / corpo della notizia",
+      briefPlaceholder: "Ieri mattina, alla presenza del sindaco e del direttivo, è stata inaugurata la sede dell'associazione in via Roma 12. Visita guidata aperta al pubblico fino a sabato.",
+      briefHint: "Un sommario essenziale. L'AI estrae gli elementi chiave per le slide."
+    }
+  };
+
+  function setContentType(t){
+    document.getElementById('contentType').value = t;
+    document.querySelectorAll('.ctype-tab').forEach(el => {
+      const active = el.dataset.type === t;
+      el.classList.toggle('active', active);
+      el.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    document.getElementById('eventFields').classList.toggle('show', t === 'event');
+    document.getElementById('newsFields').classList.toggle('show', t === 'news');
+    const cfg = typeConfig[t];
+    document.getElementById('entityLabel').textContent = cfg.entityLabel;
+    document.getElementById('businessName').placeholder = cfg.entityPlaceholder;
+    document.getElementById('entityHint').textContent = cfg.entityHint;
+    document.getElementById('briefLabel').textContent = cfg.briefLabel;
+    document.getElementById('brief').placeholder = cfg.briefPlaceholder;
+    document.getElementById('briefHint').textContent = cfg.briefHint;
+    // Sensible defaults by type
+    const ns = document.getElementById('numSlides');
+    if (t === 'event' && !ns.dataset.touched) ns.value = '4';
+    if (t === 'news' && !ns.dataset.touched) ns.value = '3';
+  }
+  document.querySelectorAll('.ctype-tab').forEach(el => {
+    el.addEventListener('click', () => setContentType(el.dataset.type));
+  });
+  document.getElementById('numSlides').addEventListener('change', e => {
+    e.target.dataset.touched = '1';
+  });
+
   /* ——— LOADING MESSAGES ROTATOR ——— */
   const LOADING_MESSAGES = [
     'Analizzo il brief…',
@@ -939,7 +1071,9 @@
       submitBtn.textContent = 'Generazione in corso…';
       startLoading();
 
+      const contentType = form.contentType.value;
       const body = {
+        contentType,
         businessName,
         brief,
         logoUrl,
@@ -949,6 +1083,17 @@
         style: form.style.value,
         renderingType: form.renderingType.value
       };
+      if (contentType === 'event') {
+        body.eventDate = form.eventDate.value;
+        body.eventLocation = form.eventLocation.value.trim();
+        body.organizers = form.organizers.value.trim();
+        body.sponsors = form.sponsors.value.trim();
+        body.eventInfo = form.eventInfo.value.trim();
+      } else if (contentType === 'news') {
+        body.newsDate = form.newsDate.value;
+        body.author = form.author.value.trim();
+        body.eyebrow = form.eyebrow.value.trim();
+      }
 
       const ac = new AbortController();
       const timeout = setTimeout(() => ac.abort(), 180000);
