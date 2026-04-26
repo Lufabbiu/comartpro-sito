@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bilanci e rendiconti — Com.Art.Pro APS ETS</title>
+<meta name="description" content="Bilanci e rendiconti pubblici di Com.Art.Pro APS ETS, scaricabili e consultabili online.">
+<link rel="icon" type="image/png" href="/public/logo.png?v=3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:ital,wght@0,400;0,600;0,700;1,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0e1a2b; --ink-soft:#2a3a55;
+    --paper:#f4efe4; --paper-alt:#ebe4d4;
+    --brand:#2d7a3e; --brand-dark:#1e5a2c; --brand-soft:#4a9f6b;
+    --gold:#c89b3c; --red:#b8372e;
+    --line:rgba(14,26,43,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  img{max-width:100%;display:block}
+
+  /* NAV (shared) */
+  .nav{position:sticky;top:0;z-index:100;background:rgba(244,239,228,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem}
+  .brand{display:flex;align-items:center;gap:.8rem;text-decoration:none}
+  .brand .logo-wrap{width:48px;height:48px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+  .brand .logo-wrap img{width:100%;height:100%;object-fit:contain;padding:2px}
+  .brand .name{font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;color:var(--brand-dark)}
+  .brand .sub{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
+  .nav-links{display:flex;gap:2rem;list-style:none;align-items:center}
+  .nav-links a{text-decoration:none;font-size:.95rem;color:var(--ink-soft);font-weight:500;transition:color .2s}
+  .nav-links a:hover,.nav-links a.active{color:var(--brand-dark)}
+  .nav-cta{padding:.6rem 1.2rem;background:var(--brand);color:#fff!important;border-radius:999px;font-weight:600;font-size:.9rem}
+
+  /* PAGE HEAD */
+  .page-head{padding:clamp(4rem,9vh,7rem) 2rem 3rem;position:relative;overflow:hidden}
+  .page-head::before{content:"";position:absolute;top:-150px;right:-150px;width:520px;height:520px;background:radial-gradient(circle,rgba(200,155,60,.12),transparent 70%)}
+  .page-head-inner{max-width:1200px;margin:0 auto;position:relative}
+  .eyebrow{display:inline-flex;align-items:center;gap:.6rem;font-size:.75rem;letter-spacing:.22em;text-transform:uppercase;color:var(--brand-dark);font-weight:600;padding:.5rem 1rem;background:rgba(45,122,62,.08);border-radius:999px;margin-bottom:1.5rem}
+  .eyebrow::before{content:"";width:6px;height:6px;background:var(--brand);border-radius:50%}
+  .page-head h1{font-family:'Fraunces',serif;font-size:clamp(2.4rem,5vw,4rem);line-height:1.05;letter-spacing:-.02em;font-weight:700;max-width:24ch;margin-bottom:1.5rem}
+  .page-head h1 em{font-style:italic;color:var(--brand-dark);font-weight:600}
+  .page-head p{font-size:1.1rem;color:var(--ink-soft);max-width:55ch}
+
+  /* LIST */
+  section.bilanci{padding:1rem 2rem clamp(4rem,8vh,6rem)}
+  .bilanci-inner{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:2.5rem}
+
+  .bilancio{
+    background:#fff;border:1px solid var(--line);border-radius:18px;
+    overflow:hidden;display:grid;grid-template-columns:.85fr 1.15fr;gap:0;
+    box-shadow:0 16px 40px -24px rgba(14,26,43,.15);
+  }
+  .bilancio-meta{
+    padding:2.4rem;display:flex;flex-direction:column;gap:1rem;
+    border-right:1px solid var(--line);background:var(--paper-alt);
+  }
+  .bilancio-year{
+    font-family:'Fraunces',serif;font-style:italic;font-weight:600;
+    font-size:clamp(2.4rem,4vw,3.4rem);line-height:1;letter-spacing:-.02em;
+    color:var(--brand-dark);
+  }
+  .bilancio-title{
+    font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;
+    line-height:1.25;letter-spacing:-.01em;color:var(--ink);
+  }
+  .bilancio-desc{color:var(--ink-soft);font-size:.98rem;line-height:1.55}
+  .bilancio-actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:auto}
+  .btn{
+    display:inline-flex;align-items:center;gap:.45rem;
+    padding:.75rem 1.3rem;border-radius:999px;font-weight:600;
+    text-decoration:none;font-size:.92rem;border:0;cursor:pointer;font-family:inherit;
+    transition:background .2s, transform .2s, color .2s, border-color .2s;
+  }
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.primary:hover{background:var(--brand-dark);transform:translateY(-1px)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--brand);color:var(--brand-dark)}
+
+  .bilancio-preview{position:relative;background:#222;min-height:480px}
+  .bilancio-preview iframe{
+    width:100%;height:100%;min-height:480px;border:0;
+    background:#222;display:block;
+  }
+  .bilancio-preview .pf-loading{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    color:rgba(255,255,255,.5);font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;
+  }
+
+  .empty{
+    padding:4rem 2rem;text-align:center;color:var(--ink-soft);
+    background:var(--paper-alt);border:1px dashed var(--line);border-radius:14px;
+  }
+  .empty h3{font-family:'Fraunces',serif;font-size:1.4rem;margin-bottom:.6rem;color:var(--ink)}
+
+  /* FOOTER */
+  footer{background:var(--ink);color:rgba(244,239,228,.7);padding:3rem 2rem 2rem;margin-top:0}
+  .footer-inner{max-width:1200px;margin:0 auto;text-align:center;font-size:.85rem}
+  .footer-inner a{color:var(--brand-soft);text-decoration:none;margin:0 .8rem}
+
+  @media(max-width:900px){
+    .nav-links{display:none}
+    .bilancio{grid-template-columns:1fr}
+    .bilancio-meta{border-right:0;border-bottom:1px solid var(--line)}
+    .bilancio-preview,.bilancio-preview iframe{min-height:360px}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <span class="logo-wrap"><img src="/public/logo.png?v=3" alt="Com.Art.Pro"></span>
+      <div><div class="name">Com.Art.Pro</div><div class="sub">APS ETS</div></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/#novita">Novità</a></li>
+      <li><a href="/#associazione">Associazione</a></li>
+      <li><a href="/progetti.html">Progetti</a></li>
+      <li><a href="/soci.html">Soci</a></li>
+      <li><a href="/ledwall.html">LED Wall</a></li>
+      <li><a href="/bilancio.html" class="active">Bilanci</a></li>
+      <li><a href="/#contatti">Contatti</a></li>
+      <li><a class="nav-cta" href="/#iscrizione">Associati</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="page-head">
+  <div class="page-head-inner">
+    <div class="eyebrow">Trasparenza</div>
+    <h1>Bilanci e <em>rendiconti</em> pubblici.</h1>
+    <p>Tutti i documenti contabili dell'associazione sono pubblicati in formato PDF, consultabili online e scaricabili. Una scelta di trasparenza richiesta dal Codice del Terzo Settore.</p>
+  </div>
+</header>
+
+<section class="bilanci">
+  <div class="bilanci-inner" id="list">
+    <div class="empty"><h3>Caricamento…</h3></div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <p>Com.Art.Pro APS ETS · Alessano (LE) · <a href="/">Home</a> · <a href="/progetti.html">Progetti</a> · <a href="/#contatti">Contatti</a></p>
+    <p style="margin-top:.8rem;opacity:.55">© 2026 · Tutti i diritti riservati</p>
+  </div>
+</footer>
+
+<script>
+const esc = s => String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function renderBilanci(items){
+  const list = document.getElementById('list');
+  if (!items.length){
+    list.innerHTML = `
+      <div class="empty">
+        <h3>Nessun bilancio ancora pubblicato</h3>
+        <p>I documenti contabili saranno disponibili in questa pagina non appena approvati dall'assemblea.</p>
+      </div>`;
+    return;
+  }
+  list.innerHTML = items.map(b => {
+    const url = b.pdf_url || '';
+    const safeUrl = esc(url);
+    return `
+      <article class="bilancio">
+        <div class="bilancio-meta">
+          ${b.year ? `<div class="bilancio-year">${esc(b.year)}</div>` : ''}
+          <h2 class="bilancio-title">${esc(b.title)}</h2>
+          ${b.description ? `<p class="bilancio-desc">${esc(b.description)}</p>` : ''}
+          ${url ? `
+            <div class="bilancio-actions">
+              <a class="btn primary" href="${safeUrl}" target="_blank" rel="noopener">Apri PDF ↗</a>
+              <a class="btn ghost" href="${safeUrl}" download>Scarica ↓</a>
+            </div>` : ''}
+        </div>
+        <div class="bilancio-preview">
+          ${url ? `
+            <div class="pf-loading">Caricamento PDF…</div>
+            <iframe src="${safeUrl}#view=FitH&toolbar=0" loading="lazy" title="Anteprima ${esc(b.title)}" onload="this.previousElementSibling && this.previousElementSibling.remove()"></iframe>
+          ` : `<div class="pf-loading">PDF non disponibile</div>`}
+        </div>
+      </article>`;
+  }).join('');
+}
+
+fetch('/api/bilanci')
+  .then(r => r.json())
+  .then(renderBilanci)
+  .catch(err => {
+    document.getElementById('list').innerHTML =
+      `<div class="empty"><h3>Errore caricamento</h3><p>${esc(err.message||'')}</p></div>`;
+  });
+</script>
+</body>
+</html>

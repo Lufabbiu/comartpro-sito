@@ -114,6 +114,17 @@ async function migrate() {
       size INTEGER NOT NULL,
       created_at TIMESTAMPTZ DEFAULT now()
     );
+    CREATE TABLE IF NOT EXISTS bilanci (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT,
+      year INTEGER,
+      pdf_url TEXT,
+      published_at TIMESTAMPTZ DEFAULT now(),
+      sort_order INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      updated_at TIMESTAMPTZ DEFAULT now()
+    );
   `;
   await pool.query(q);
 
@@ -161,7 +172,8 @@ async function migrate() {
 const COLS = {
   events: ['id','title','date','location','description','content','poster','teaser','pdf','organizers','sponsors','info','gallery','sort_order'],
   news: ['id','title','date','author','excerpt','body','image','gallery','sort_order'],
-  projects: ['id','name','tag','description','content','status','color','link','image','gallery','sort_order']
+  projects: ['id','name','tag','description','content','status','color','link','image','gallery','sort_order'],
+  bilanci: ['id','title','description','year','pdf_url','sort_order']
 };
 async function upsert(table, row) {
   const cols = COLS[table];
@@ -170,6 +182,9 @@ async function upsert(table, row) {
     if (c === 'date' && v && typeof v === 'string' && v.length === 16) v = v + ':00';
     if (c === 'gallery' && Array.isArray(v)) v = JSON.stringify(v);
     if (c === 'gallery' && v == null) v = '[]';
+    if (c === 'year' && (v === '' || v == null)) v = null;
+    else if (c === 'year' && typeof v === 'string') v = parseInt(v, 10) || null;
+    if (v === '') v = null;
     return v ?? null;
   });
   const placeholders = cols.map((_,i) => `$${i+1}`).join(',');
@@ -301,6 +316,10 @@ async function handleApi(req, res, url) {
     const { rows } = await pool.query('SELECT * FROM projects ORDER BY sort_order ASC, created_at ASC');
     return json(res, 200, rows);
   }
+  if (url.pathname === '/api/bilanci' && method === 'GET') {
+    const { rows } = await pool.query('SELECT * FROM bilanci ORDER BY sort_order ASC, year DESC NULLS LAST, created_at DESC');
+    return json(res, 200, rows);
+  }
 
   if (url.pathname === '/api/ai/ledwall-campaign' && method === 'POST') {
     const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString().split(',')[0].trim();
@@ -429,7 +448,7 @@ async function handleApi(req, res, url) {
   }
 
   // Reorder
-  const reorderMatch = url.pathname.match(/^\/api\/(events|news|projects)\/reorder$/);
+  const reorderMatch = url.pathname.match(/^\/api\/(events|news|projects|bilanci)\/reorder$/);
   if (reorderMatch && method === 'POST') {
     const coll = reorderMatch[1];
     const body = await readJsonBody(req);
@@ -446,8 +465,8 @@ async function handleApi(req, res, url) {
     return json(res, 200, { ok: true });
   }
 
-  // CRUD events/news/projects
-  const match = url.pathname.match(/^\/api\/(events|news|projects)(?:\/(.+))?$/);
+  // CRUD events/news/projects/bilanci
+  const match = url.pathname.match(/^\/api\/(events|news|projects|bilanci)(?:\/(.+))?$/);
   if (match) {
     const coll = match[1], id = match[2];
     if (method === 'POST') {

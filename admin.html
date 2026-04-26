@@ -115,7 +115,7 @@
 
 <script>
 const app = document.getElementById('app');
-let state = { admin: false, tab: 'events', events: [], news: [], projects: [], editing: null, msg: null };
+let state = { admin: false, tab: 'events', events: [], news: [], projects: [], bilanci: [], editing: null, msg: null };
 
 async function api(path, opts = {}) {
   const r = await fetch(path, { credentials: 'include', ...opts,
@@ -175,10 +175,10 @@ function renderLogin() {
 }
 
 async function loadAll() {
-  const [events, news, projects] = await Promise.all([
-    api('/api/events'), api('/api/news'), api('/api/projects')
+  const [events, news, projects, bilanci] = await Promise.all([
+    api('/api/events'), api('/api/news'), api('/api/projects'), api('/api/bilanci')
   ]);
-  state.events = events; state.news = news; state.projects = projects;
+  state.events = events; state.news = news; state.projects = projects; state.bilanci = bilanci;
   render();
 }
 
@@ -199,6 +199,7 @@ function renderDashboard() {
         <button class="tab ${state.tab==='events'?'active':''}" data-tab="events">Eventi</button>
         <button class="tab ${state.tab==='news'?'active':''}" data-tab="news">Notizie</button>
         <button class="tab ${state.tab==='projects'?'active':''}" data-tab="projects">Progetti</button>
+        <button class="tab ${state.tab==='bilanci'?'active':''}" data-tab="bilanci">Bilanci</button>
       </div>
       <div id="tabContent"></div>
     </div>`;
@@ -215,6 +216,7 @@ function renderTab() {
   if (state.tab === 'events') c.innerHTML = eventsView();
   if (state.tab === 'news') c.innerHTML = newsView();
   if (state.tab === 'projects') c.innerHTML = projectsView();
+  if (state.tab === 'bilanci') c.innerHTML = bilanciView();
   bindForms();
 }
 
@@ -409,10 +411,64 @@ function projectForm(d) {
     </form>`;
 }
 
+/* ——— BILANCI ——— */
+function bilanciView() {
+  const items = state.bilanci;
+  const form = state.editing?.type === 'bilancio' ? state.editing.data : null;
+  return `
+    <div class="section-head">
+      <h2>Bilanci</h2>
+      <button class="btn primary small" onclick="startEdit('bilancio')">+ Nuovo bilancio</button>
+    </div>
+    ${form ? bilancioForm(form) : ''}
+    ${items.length > 1 ? '<div class="hint">💡 Trascina la maniglia ⋮⋮ per riordinare</div>' : ''}
+    <div class="list" data-list="bilanci">
+      ${items.length ? items.map(b => `
+        <div class="item" draggable="true" data-id="${esc(b.id)}">
+          <div class="handle" title="Trascina per riordinare">⋮⋮</div>
+          <div class="thumb" style="background:rgba(45,122,62,.1);color:var(--brand-dark);font-family:'Fraunces',serif;font-weight:700;font-size:1.2rem">${esc(b.year || '—')}</div>
+          <div>
+            <h3>${esc(b.title)}</h3>
+            <div class="meta">
+              ${b.year?`<span>📅 ${esc(b.year)}</span>`:''}
+              ${b.pdf_url?`<span>📄 PDF caricato</span>`:'<span style="color:var(--red)">⚠ PDF mancante</span>'}
+            </div>
+          </div>
+          <div class="actions">
+            ${b.pdf_url?`<a class="btn ghost small" href="${esc(b.pdf_url)}" target="_blank" rel="noopener">Apri</a>`:''}
+            <button class="btn ghost small" onclick="startEdit('bilancio','${b.id}')">Modifica</button>
+            <button class="btn danger small" onclick="del('bilanci','${b.id}')">Elimina</button>
+          </div>
+        </div>`).join('') : '<div class="empty">Nessun bilancio caricato.</div>'}
+    </div>`;
+}
+function bilancioForm(d) {
+  return `
+    <form class="form-card" data-form="bilancio" data-id="${esc(d.id||'')}">
+      <h3>${d.id?'Modifica bilancio':'Nuovo bilancio'}</h3>
+      <div class="form-row">
+        <div class="field"><label>Titolo *</label><input name="title" required value="${esc(d.title||'')}" placeholder="Bilancio sociale 2025"></div>
+        <div class="field"><label>Anno</label><input name="year" type="number" min="2000" max="2100" value="${esc(d.year||'')}" placeholder="2025"></div>
+      </div>
+      <div class="field"><label>Descrizione</label><textarea name="description" placeholder="Breve descrizione del documento, periodo di riferimento, dati salienti">${esc(d.description||'')}</textarea></div>
+      <div class="field"><label>PDF del bilancio *</label>
+        <label class="upload-box"><input type="file" accept="application/pdf" data-target="pdf_url">
+          <div class="ph">📄 Clicca per caricare il PDF</div>
+          <div class="upload-preview" data-preview="pdf_url">${previewHtml(d.pdf_url, 'PDF attuale')}</div>
+        </label>
+        <input type="hidden" name="pdf_url" value="${esc(d.pdf_url||'')}" required>
+      </div>
+      <div class="form-actions">
+        <button class="btn primary" type="submit">${d.id?'Salva modifiche':'Pubblica bilancio'}</button>
+        <button class="btn ghost" type="button" onclick="cancelEdit()">Annulla</button>
+      </div>
+    </form>`;
+}
+
 /* ——— Actions ——— */
 window.startEdit = function(type, id) {
-  const map = { event: state.events, news: state.news, project: state.projects };
-  const key = type === 'event' ? 'events' : type === 'news' ? 'news' : 'projects';
+  const map = { event: state.events, news: state.news, project: state.projects, bilancio: state.bilanci };
+  const key = type === 'event' ? 'events' : type === 'news' ? 'news' : type === 'project' ? 'projects' : 'bilanci';
   const data = id ? state[key].find(x => x.id === id) || {} : {};
   state.editing = { type, data: { ...data } };
   renderTab();
@@ -470,7 +526,7 @@ function bindForms() {
       const data = {}; new FormData(f).forEach((v,k) => data[k] = v);
       if (data.date && !data.date.includes('T') && data.date.length === 10) data.date = data.date + 'T00:00:00';
       const id = f.dataset.id;
-      const coll = f.dataset.form === 'event' ? 'events' : f.dataset.form === 'news' ? 'news' : 'projects';
+      const coll = f.dataset.form === 'event' ? 'events' : f.dataset.form === 'news' ? 'news' : f.dataset.form === 'project' ? 'projects' : 'bilanci';
       try {
         if (id) await api(`/api/${coll}/${id}`, { method: 'PUT', body: JSON.stringify(data) });
         else await api(`/api/${coll}`, { method: 'POST', body: JSON.stringify(data) });
