@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Documenti ufficiali — Com.Art.Pro APS ETS</title>
+<meta name="description" content="Statuto, atto costitutivo, bilanci, verbali e altri documenti pubblici di Com.Art.Pro APS ETS, scaricabili e consultabili online.">
+<link rel="icon" type="image/png" href="/public/logo.png?v=3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:ital,wght@0,400;0,600;0,700;1,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0e1a2b; --ink-soft:#2a3a55;
+    --paper:#f4efe4; --paper-alt:#ebe4d4;
+    --brand:#2d7a3e; --brand-dark:#1e5a2c; --brand-soft:#4a9f6b;
+    --gold:#c89b3c; --red:#b8372e;
+    --line:rgba(14,26,43,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  img{max-width:100%;display:block}
+
+  /* NAV */
+  .nav{position:sticky;top:0;z-index:100;background:rgba(244,239,228,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem}
+  .brand{display:flex;align-items:center;gap:.8rem;text-decoration:none}
+  .brand .logo-wrap{width:48px;height:48px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+  .brand .logo-wrap img{width:100%;height:100%;object-fit:contain;padding:2px}
+  .brand .name{font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;color:var(--brand-dark)}
+  .brand .sub{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
+  .nav-links{display:flex;gap:2rem;list-style:none;align-items:center}
+  .nav-links a{text-decoration:none;font-size:.95rem;color:var(--ink-soft);font-weight:500;transition:color .2s}
+  .nav-links a:hover,.nav-links a.active{color:var(--brand-dark)}
+  .nav-cta{padding:.6rem 1.2rem;background:var(--brand);color:#fff!important;border-radius:999px;font-weight:600;font-size:.9rem}
+
+  /* HEAD */
+  .page-head{padding:clamp(4rem,9vh,7rem) 2rem 3rem;position:relative;overflow:hidden}
+  .page-head::before{content:"";position:absolute;top:-150px;right:-150px;width:520px;height:520px;background:radial-gradient(circle,rgba(200,155,60,.12),transparent 70%)}
+  .page-head-inner{max-width:1200px;margin:0 auto;position:relative}
+  .eyebrow{display:inline-flex;align-items:center;gap:.6rem;font-size:.75rem;letter-spacing:.22em;text-transform:uppercase;color:var(--brand-dark);font-weight:600;padding:.5rem 1rem;background:rgba(45,122,62,.08);border-radius:999px;margin-bottom:1.5rem}
+  .eyebrow::before{content:"";width:6px;height:6px;background:var(--brand);border-radius:50%}
+  .page-head h1{font-family:'Fraunces',serif;font-size:clamp(2.4rem,5vw,4rem);line-height:1.05;letter-spacing:-.02em;font-weight:700;max-width:24ch;margin-bottom:1.5rem}
+  .page-head h1 em{font-style:italic;color:var(--brand-dark);font-weight:600}
+  .page-head p{font-size:1.1rem;color:var(--ink-soft);max-width:60ch}
+
+  /* TOC chips */
+  .toc{
+    max-width:1100px;margin:0 auto 2rem;padding:0 2rem;
+    display:flex;gap:.6rem;flex-wrap:wrap;
+  }
+  .toc a{
+    text-decoration:none;font-size:.82rem;font-weight:500;
+    padding:.5rem .9rem;border-radius:999px;
+    background:var(--paper-alt);border:1px solid var(--line);
+    color:var(--ink-soft);transition:all .2s;
+  }
+  .toc a:hover{border-color:var(--brand);color:var(--brand-dark)}
+  .toc a .ct{
+    margin-left:.45rem;font-size:.7rem;font-weight:700;
+    color:var(--brand-dark);background:rgba(45,122,62,.12);
+    padding:.05rem .42rem;border-radius:99px;
+  }
+
+  /* SECTIONS */
+  .docs-wrap{padding:1rem 2rem clamp(4rem,8vh,6rem);max-width:1100px;margin:0 auto}
+  .doc-section{margin-bottom:3.5rem;scroll-margin-top:5rem}
+  .doc-section-head{
+    display:flex;align-items:baseline;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+    margin-bottom:1.5rem;padding-bottom:.8rem;border-bottom:1px solid var(--line);
+  }
+  .doc-section-head h2{
+    font-family:'Fraunces',serif;font-size:clamp(1.5rem,2.4vw,2rem);font-weight:700;
+    letter-spacing:-.01em;color:var(--ink);
+  }
+  .doc-section-head .count{
+    font-size:.75rem;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--ink-soft);font-weight:600;
+  }
+
+  .doc-list{display:flex;flex-direction:column;gap:1rem}
+  .doc-card{
+    background:#fff;border:1px solid var(--line);border-radius:14px;
+    overflow:hidden;transition:box-shadow .2s, border-color .2s;
+  }
+  .doc-card:hover{border-color:var(--brand-soft)}
+  .doc-card-head{
+    padding:1.5rem 1.7rem;
+    display:grid;grid-template-columns:auto 1fr auto;gap:1.4rem;align-items:center;
+  }
+  .doc-card .yr{
+    font-family:'Fraunces',serif;font-style:italic;font-weight:600;
+    font-size:1.7rem;color:var(--brand-dark);line-height:1;
+    min-width:3.6rem;text-align:center;
+  }
+  .doc-card .yr.empty{color:var(--ink-soft);opacity:.45;font-style:normal;font-size:1.2rem}
+  .doc-card .body h3{
+    font-family:'Fraunces',serif;font-size:1.2rem;font-weight:600;
+    line-height:1.3;letter-spacing:-.005em;margin-bottom:.3rem;color:var(--ink);
+  }
+  .doc-card .body p{font-size:.92rem;color:var(--ink-soft);line-height:1.5;max-width:60ch}
+  .doc-card .actions{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+  .btn{
+    display:inline-flex;align-items:center;gap:.4rem;
+    padding:.65rem 1.1rem;border-radius:999px;font-weight:600;
+    text-decoration:none;font-size:.85rem;border:0;cursor:pointer;font-family:inherit;
+    transition:background .2s, color .2s, border-color .2s, transform .2s;
+  }
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.primary:hover{background:var(--brand-dark);transform:translateY(-1px)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--brand);color:var(--brand-dark)}
+  .btn.toggle.open{background:var(--ink);color:var(--paper)}
+
+  .doc-preview{
+    background:#1a1a1f;height:0;overflow:hidden;
+    transition:height .3s ease;
+  }
+  .doc-preview.open{height:520px;border-top:1px solid var(--line)}
+  .doc-preview iframe{width:100%;height:100%;border:0;background:#1a1a1f;display:block}
+
+  .empty{
+    padding:4rem 2rem;text-align:center;color:var(--ink-soft);
+    background:var(--paper-alt);border:1px dashed var(--line);border-radius:14px;
+  }
+  .empty h3{font-family:'Fraunces',serif;font-size:1.4rem;margin-bottom:.6rem;color:var(--ink)}
+
+  /* FOOTER */
+  footer{background:var(--ink);color:rgba(244,239,228,.7);padding:3rem 2rem 2rem}
+  .footer-inner{max-width:1200px;margin:0 auto;text-align:center;font-size:.85rem}
+  .footer-inner a{color:var(--brand-soft);text-decoration:none;margin:0 .8rem}
+
+  @media(max-width:780px){
+    .nav-links{display:none}
+    .doc-card-head{grid-template-columns:1fr;gap:.8rem}
+    .doc-card .yr{text-align:left;font-size:1.4rem}
+    .doc-card .actions{justify-content:flex-start}
+    .doc-preview.open{height:420px}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <span class="logo-wrap"><img src="/public/logo.png?v=3" alt="Com.Art.Pro"></span>
+      <div><div class="name">Com.Art.Pro</div><div class="sub">APS ETS</div></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/#novita">Novità</a></li>
+      <li><a href="/#associazione">Associazione</a></li>
+      <li><a href="/progetti.html">Progetti</a></li>
+      <li><a href="/soci.html">Soci</a></li>
+      <li><a href="/ledwall.html">LED Wall</a></li>
+      <li><a href="/documenti.html" class="active">Documenti</a></li>
+      <li><a href="/#contatti">Contatti</a></li>
+      <li><a class="nav-cta" href="/#iscrizione">Associati</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="page-head">
+  <div class="page-head-inner">
+    <div class="eyebrow">Trasparenza</div>
+    <h1>Documenti <em>ufficiali</em>.</h1>
+    <p>Statuto, atto costitutivo, bilanci, verbali assemblea e altri documenti pubblici dell'associazione, organizzati per tipo, scaricabili e consultabili online.</p>
+  </div>
+</header>
+
+<nav class="toc" id="toc" aria-label="Indice documenti"></nav>
+
+<section class="docs-wrap" id="docsWrap">
+  <div class="empty"><h3>Caricamento…</h3></div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <p>Com.Art.Pro APS ETS · Alessano (LE) · <a href="/">Home</a> · <a href="/progetti.html">Progetti</a> · <a href="/#contatti">Contatti</a></p>
+    <p style="margin-top:.8rem;opacity:.55">© 2026 · Tutti i diritti riservati</p>
+  </div>
+</footer>
+
+<script>
+const esc = s => String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const KINDS = [
+  { value:'statuto',          plural:'Statuto',                description:'Atto fondativo che regola la vita dell\'associazione.' },
+  { value:'atto_costitutivo', plural:'Atto costitutivo',       description:'Documento di costituzione formale dell\'ente.' },
+  { value:'bilancio',         plural:'Bilanci e rendiconti',   description:'Rendicontazione annuale delle attività e delle risorse.' },
+  { value:'verbale',          plural:'Verbali assemblea',      description:'Decisioni assembleari pubblicate per trasparenza.' },
+  { value:'regolamento',      plural:'Regolamenti',            description:'Norme operative interne.' },
+  { value:'relazione',        plural:'Relazioni e report',     description:'Report di attività e analisi periodiche.' },
+  { value:'altro',            plural:'Altri documenti',        description:'Documentazione supplementare di interesse pubblico.' }
+];
+const KIND_MAP = Object.fromEntries(KINDS.map(k=>[k.value, k]));
+
+function render(items){
+  const wrap = document.getElementById('docsWrap');
+  const toc = document.getElementById('toc');
+  if (!items.length) {
+    wrap.innerHTML = `
+      <div class="empty">
+        <h3>Nessun documento ancora pubblicato</h3>
+        <p>I documenti ufficiali saranno disponibili in questa pagina non appena pubblicati dal direttivo.</p>
+      </div>`;
+    toc.innerHTML = '';
+    return;
+  }
+  // group by kind
+  const groups = {};
+  for (const it of items) {
+    const k = (it.kind && KIND_MAP[it.kind]) ? it.kind : 'altro';
+    (groups[k] = groups[k] || []).push(it);
+  }
+  // toc
+  const tocHtml = KINDS.filter(k => groups[k.value] && groups[k.value].length).map(k =>
+    `<a href="#${k.value}">${esc(k.plural)}<span class="ct">${groups[k.value].length}</span></a>`
+  ).join('');
+  toc.innerHTML = tocHtml;
+
+  // sections
+  const sectionsHtml = KINDS.map(k => {
+    const docs = groups[k.value];
+    if (!docs || !docs.length) return '';
+    return `
+      <section class="doc-section" id="${k.value}">
+        <header class="doc-section-head">
+          <h2>${esc(k.plural)}</h2>
+          <span class="count">${docs.length} ${docs.length===1?'documento':'documenti'}</span>
+        </header>
+        <div class="doc-list">
+          ${docs.map(renderDocCard).join('')}
+        </div>
+      </section>`;
+  }).join('');
+  wrap.innerHTML = sectionsHtml;
+
+  // Bind preview toggles
+  document.querySelectorAll('.btn.toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.target);
+      if (!target) return;
+      const isOpen = target.classList.contains('open');
+      if (isOpen) {
+        target.classList.remove('open');
+        btn.classList.remove('open');
+        btn.textContent = 'Anteprima ↓';
+      } else {
+        if (!target.dataset.loaded) {
+          const iframe = document.createElement('iframe');
+          iframe.src = btn.dataset.url + '#view=FitH&toolbar=0';
+          iframe.loading = 'lazy';
+          iframe.title = btn.dataset.title || 'Anteprima documento';
+          target.appendChild(iframe);
+          target.dataset.loaded = '1';
+        }
+        target.classList.add('open');
+        btn.classList.add('open');
+        btn.textContent = 'Chiudi anteprima ↑';
+      }
+    });
+  });
+}
+
+function renderDocCard(d, i){
+  const url = d.pdf_url || '';
+  const safeUrl = esc(url);
+  const previewId = 'pf-' + esc(d.id);
+  return `
+    <article class="doc-card">
+      <div class="doc-card-head">
+        <div class="yr ${d.year?'':'empty'}">${d.year ? esc(d.year) : '—'}</div>
+        <div class="body">
+          <h3>${esc(d.title)}</h3>
+          ${d.description ? `<p>${esc(d.description)}</p>` : ''}
+        </div>
+        <div class="actions">
+          ${url ? `
+            <button class="btn ghost toggle" type="button" data-target="${previewId}" data-url="${safeUrl}" data-title="${esc(d.title)}">Anteprima ↓</button>
+            <a class="btn primary" href="${safeUrl}" target="_blank" rel="noopener">Apri ↗</a>
+            <a class="btn ghost" href="${safeUrl}" download>Scarica ↓</a>
+          ` : `<span style="font-size:.85rem;color:var(--red)">PDF non disponibile</span>`}
+        </div>
+      </div>
+      ${url ? `<div class="doc-preview" id="${previewId}"></div>` : ''}
+    </article>`;
+}
+
+fetch('/api/documents')
+  .then(r => r.json())
+  .then(render)
+  .catch(err => {
+    document.getElementById('docsWrap').innerHTML =
+      `<div class="empty"><h3>Errore caricamento</h3><p>${esc(err.message||'')}</p></div>`;
+    document.getElementById('toc').innerHTML = '';
+  });
+</script>
+</body>
+</html>

@@ -114,8 +114,15 @@ async function migrate() {
       size INTEGER NOT NULL,
       created_at TIMESTAMPTZ DEFAULT now()
     );
-    CREATE TABLE IF NOT EXISTS bilanci (
+    DO $$ BEGIN
+      IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='bilanci')
+         AND NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='documents') THEN
+        EXECUTE 'ALTER TABLE bilanci RENAME TO documents';
+      END IF;
+    END $$;
+    CREATE TABLE IF NOT EXISTS documents (
       id TEXT PRIMARY KEY,
+      kind TEXT NOT NULL DEFAULT 'bilancio',
       title TEXT NOT NULL,
       description TEXT,
       year INTEGER,
@@ -125,6 +132,7 @@ async function migrate() {
       created_at TIMESTAMPTZ DEFAULT now(),
       updated_at TIMESTAMPTZ DEFAULT now()
     );
+    ALTER TABLE documents ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'bilancio';
   `;
   await pool.query(q);
 
@@ -173,7 +181,7 @@ const COLS = {
   events: ['id','title','date','location','description','content','poster','teaser','pdf','organizers','sponsors','info','gallery','sort_order'],
   news: ['id','title','date','author','excerpt','body','image','gallery','sort_order'],
   projects: ['id','name','tag','description','content','status','color','link','image','gallery','sort_order'],
-  bilanci: ['id','title','description','year','pdf_url','sort_order']
+  documents: ['id','kind','title','description','year','pdf_url','sort_order']
 };
 async function upsert(table, row) {
   const cols = COLS[table];
@@ -316,8 +324,14 @@ async function handleApi(req, res, url) {
     const { rows } = await pool.query('SELECT * FROM projects ORDER BY sort_order ASC, created_at ASC');
     return json(res, 200, rows);
   }
-  if (url.pathname === '/api/bilanci' && method === 'GET') {
-    const { rows } = await pool.query('SELECT * FROM bilanci ORDER BY sort_order ASC, year DESC NULLS LAST, created_at DESC');
+  if (url.pathname === '/api/documents' && method === 'GET') {
+    const kind = url.searchParams.get('kind');
+    const params = [];
+    let where = '';
+    if (kind) { params.push(kind); where = 'WHERE kind = $1'; }
+    const { rows } = await pool.query(
+      `SELECT * FROM documents ${where} ORDER BY sort_order ASC, year DESC NULLS LAST, created_at DESC`,
+      params);
     return json(res, 200, rows);
   }
 
@@ -448,7 +462,7 @@ async function handleApi(req, res, url) {
   }
 
   // Reorder
-  const reorderMatch = url.pathname.match(/^\/api\/(events|news|projects|bilanci)\/reorder$/);
+  const reorderMatch = url.pathname.match(/^\/api\/(events|news|projects|documents)\/reorder$/);
   if (reorderMatch && method === 'POST') {
     const coll = reorderMatch[1];
     const body = await readJsonBody(req);
@@ -465,8 +479,8 @@ async function handleApi(req, res, url) {
     return json(res, 200, { ok: true });
   }
 
-  // CRUD events/news/projects/bilanci
-  const match = url.pathname.match(/^\/api\/(events|news|projects|bilanci)(?:\/(.+))?$/);
+  // CRUD events/news/projects/documents
+  const match = url.pathname.match(/^\/api\/(events|news|projects|documents)(?:\/(.+))?$/);
   if (match) {
     const coll = match[1], id = match[2];
     if (method === 'POST') {

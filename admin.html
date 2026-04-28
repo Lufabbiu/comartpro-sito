@@ -115,7 +115,18 @@
 
 <script>
 const app = document.getElementById('app');
-let state = { admin: false, tab: 'events', events: [], news: [], projects: [], bilanci: [], editing: null, msg: null };
+let state = { admin: false, tab: 'events', events: [], news: [], projects: [], documents: [], editing: null, msg: null };
+
+const DOC_KINDS = [
+  { value: 'statuto',          label: 'Statuto',           plural: 'Statuto',              titlePlaceholder: 'Statuto Com.Art.Pro APS ETS' },
+  { value: 'atto_costitutivo', label: 'Atto costitutivo',  plural: 'Atto costitutivo',     titlePlaceholder: 'Atto costitutivo dell\'associazione' },
+  { value: 'bilancio',         label: 'Bilancio',          plural: 'Bilanci e rendiconti', titlePlaceholder: 'Bilancio sociale 2025' },
+  { value: 'verbale',          label: 'Verbale assemblea', plural: 'Verbali assemblea',    titlePlaceholder: 'Verbale assemblea 17 aprile 2026' },
+  { value: 'regolamento',      label: 'Regolamento',       plural: 'Regolamenti',          titlePlaceholder: 'Regolamento elettorale' },
+  { value: 'relazione',        label: 'Relazione',         plural: 'Relazioni e report',   titlePlaceholder: 'Relazione attività 2025' },
+  { value: 'altro',            label: 'Altro',             plural: 'Altri documenti',      titlePlaceholder: '' }
+];
+const DOC_KIND_MAP = Object.fromEntries(DOC_KINDS.map(k => [k.value, k]));
 
 async function api(path, opts = {}) {
   const r = await fetch(path, { credentials: 'include', ...opts,
@@ -175,10 +186,10 @@ function renderLogin() {
 }
 
 async function loadAll() {
-  const [events, news, projects, bilanci] = await Promise.all([
-    api('/api/events'), api('/api/news'), api('/api/projects'), api('/api/bilanci')
+  const [events, news, projects, documents] = await Promise.all([
+    api('/api/events'), api('/api/news'), api('/api/projects'), api('/api/documents')
   ]);
-  state.events = events; state.news = news; state.projects = projects; state.bilanci = bilanci;
+  state.events = events; state.news = news; state.projects = projects; state.documents = documents;
   render();
 }
 
@@ -199,7 +210,7 @@ function renderDashboard() {
         <button class="tab ${state.tab==='events'?'active':''}" data-tab="events">Eventi</button>
         <button class="tab ${state.tab==='news'?'active':''}" data-tab="news">Notizie</button>
         <button class="tab ${state.tab==='projects'?'active':''}" data-tab="projects">Progetti</button>
-        <button class="tab ${state.tab==='bilanci'?'active':''}" data-tab="bilanci">Bilanci</button>
+        <button class="tab ${state.tab==='documents'?'active':''}" data-tab="documents">Documenti</button>
       </div>
       <div id="tabContent"></div>
     </div>`;
@@ -216,7 +227,7 @@ function renderTab() {
   if (state.tab === 'events') c.innerHTML = eventsView();
   if (state.tab === 'news') c.innerHTML = newsView();
   if (state.tab === 'projects') c.innerHTML = projectsView();
-  if (state.tab === 'bilanci') c.innerHTML = bilanciView();
+  if (state.tab === 'documents') c.innerHTML = documentsView();
   bindForms();
 }
 
@@ -411,47 +422,57 @@ function projectForm(d) {
     </form>`;
 }
 
-/* ——— BILANCI ——— */
-function bilanciView() {
-  const items = state.bilanci;
-  const form = state.editing?.type === 'bilancio' ? state.editing.data : null;
+/* ——— DOCUMENTI ——— */
+function documentsView() {
+  const items = state.documents;
+  const form = state.editing?.type === 'document' ? state.editing.data : null;
   return `
     <div class="section-head">
-      <h2>Bilanci</h2>
-      <button class="btn primary small" onclick="startEdit('bilancio')">+ Nuovo bilancio</button>
+      <h2>Documenti</h2>
+      <button class="btn primary small" onclick="startEdit('document')">+ Nuovo documento</button>
     </div>
-    ${form ? bilancioForm(form) : ''}
+    ${form ? documentForm(form) : ''}
     ${items.length > 1 ? '<div class="hint">💡 Trascina la maniglia ⋮⋮ per riordinare</div>' : ''}
-    <div class="list" data-list="bilanci">
-      ${items.length ? items.map(b => `
-        <div class="item" draggable="true" data-id="${esc(b.id)}">
+    <div class="list" data-list="documents">
+      ${items.length ? items.map(d => {
+        const k = DOC_KIND_MAP[d.kind] || DOC_KIND_MAP.altro;
+        return `
+        <div class="item" draggable="true" data-id="${esc(d.id)}">
           <div class="handle" title="Trascina per riordinare">⋮⋮</div>
-          <div class="thumb" style="background:rgba(45,122,62,.1);color:var(--brand-dark);font-family:'Fraunces',serif;font-weight:700;font-size:1.2rem">${esc(b.year || '—')}</div>
+          <div class="thumb" style="background:rgba(45,122,62,.1);color:var(--brand-dark);font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;letter-spacing:0;line-height:1.05;padding:.4rem;text-align:center">${esc(k.label)}${d.year?`<div style="font-size:.78rem;font-weight:500;margin-top:.25rem;opacity:.75">${esc(d.year)}</div>`:''}</div>
           <div>
-            <h3>${esc(b.title)}</h3>
+            <h3>${esc(d.title)}</h3>
             <div class="meta">
-              ${b.year?`<span>📅 ${esc(b.year)}</span>`:''}
-              ${b.pdf_url?`<span>📄 PDF caricato</span>`:'<span style="color:var(--red)">⚠ PDF mancante</span>'}
+              <span>${esc(k.label)}</span>
+              ${d.pdf_url?`<span>📄 PDF caricato</span>`:'<span style="color:var(--red)">⚠ PDF mancante</span>'}
             </div>
           </div>
           <div class="actions">
-            ${b.pdf_url?`<a class="btn ghost small" href="${esc(b.pdf_url)}" target="_blank" rel="noopener">Apri</a>`:''}
-            <button class="btn ghost small" onclick="startEdit('bilancio','${b.id}')">Modifica</button>
-            <button class="btn danger small" onclick="del('bilanci','${b.id}')">Elimina</button>
+            ${d.pdf_url?`<a class="btn ghost small" href="${esc(d.pdf_url)}" target="_blank" rel="noopener">Apri</a>`:''}
+            <button class="btn ghost small" onclick="startEdit('document','${d.id}')">Modifica</button>
+            <button class="btn danger small" onclick="del('documents','${d.id}')">Elimina</button>
           </div>
-        </div>`).join('') : '<div class="empty">Nessun bilancio caricato.</div>'}
+        </div>`;
+      }).join('') : '<div class="empty">Nessun documento pubblicato.</div>'}
     </div>`;
 }
-function bilancioForm(d) {
+function documentForm(d) {
+  const currentKind = d.kind || 'bilancio';
+  const ph = (DOC_KIND_MAP[currentKind] || {}).titlePlaceholder || '';
   return `
-    <form class="form-card" data-form="bilancio" data-id="${esc(d.id||'')}">
-      <h3>${d.id?'Modifica bilancio':'Nuovo bilancio'}</h3>
+    <form class="form-card" data-form="document" data-id="${esc(d.id||'')}">
+      <h3>${d.id?'Modifica documento':'Nuovo documento'}</h3>
       <div class="form-row">
-        <div class="field"><label>Titolo *</label><input name="title" required value="${esc(d.title||'')}" placeholder="Bilancio sociale 2025"></div>
-        <div class="field"><label>Anno</label><input name="year" type="number" min="2000" max="2100" value="${esc(d.year||'')}" placeholder="2025"></div>
+        <div class="field"><label>Tipo documento *</label>
+          <select name="kind" id="docKindSelect" required>
+            ${DOC_KINDS.map(k => `<option value="${k.value}" ${currentKind===k.value?'selected':''}>${esc(k.label)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Anno</label><input name="year" type="number" min="1900" max="2100" value="${esc(d.year||'')}" placeholder="${currentKind==='verbale'||currentKind==='bilancio'?'2025':'opzionale'}"></div>
       </div>
-      <div class="field"><label>Descrizione</label><textarea name="description" placeholder="Breve descrizione del documento, periodo di riferimento, dati salienti">${esc(d.description||'')}</textarea></div>
-      <div class="field"><label>PDF del bilancio *</label>
+      <div class="field"><label>Titolo *</label><input name="title" id="docTitleInput" required value="${esc(d.title||'')}" placeholder="${esc(ph)}"></div>
+      <div class="field"><label>Descrizione</label><textarea name="description" placeholder="Breve descrizione del documento, periodo di riferimento, contenuto sintetico">${esc(d.description||'')}</textarea></div>
+      <div class="field"><label>PDF del documento *</label>
         <label class="upload-box"><input type="file" accept="application/pdf" data-target="pdf_url">
           <div class="ph">📄 Clicca per caricare il PDF</div>
           <div class="upload-preview" data-preview="pdf_url">${previewHtml(d.pdf_url, 'PDF attuale')}</div>
@@ -459,7 +480,7 @@ function bilancioForm(d) {
         <input type="hidden" name="pdf_url" value="${esc(d.pdf_url||'')}" required>
       </div>
       <div class="form-actions">
-        <button class="btn primary" type="submit">${d.id?'Salva modifiche':'Pubblica bilancio'}</button>
+        <button class="btn primary" type="submit">${d.id?'Salva modifiche':'Pubblica documento'}</button>
         <button class="btn ghost" type="button" onclick="cancelEdit()">Annulla</button>
       </div>
     </form>`;
@@ -467,8 +488,7 @@ function bilancioForm(d) {
 
 /* ——— Actions ——— */
 window.startEdit = function(type, id) {
-  const map = { event: state.events, news: state.news, project: state.projects, bilancio: state.bilanci };
-  const key = type === 'event' ? 'events' : type === 'news' ? 'news' : type === 'project' ? 'projects' : 'bilanci';
+  const key = type === 'event' ? 'events' : type === 'news' ? 'news' : type === 'project' ? 'projects' : 'documents';
   const data = id ? state[key].find(x => x.id === id) || {} : {};
   state.editing = { type, data: { ...data } };
   renderTab();
@@ -520,13 +540,21 @@ function bindDragDrop() {
 
 function bindForms() {
   bindDragDrop();
+  const kindSel = document.getElementById('docKindSelect');
+  if (kindSel) {
+    kindSel.addEventListener('change', () => {
+      const title = document.getElementById('docTitleInput');
+      const cfg = DOC_KIND_MAP[kindSel.value];
+      if (title && cfg) title.placeholder = cfg.titlePlaceholder;
+    });
+  }
   document.querySelectorAll('[data-form]').forEach(f => {
     f.onsubmit = async e => {
       e.preventDefault();
       const data = {}; new FormData(f).forEach((v,k) => data[k] = v);
       if (data.date && !data.date.includes('T') && data.date.length === 10) data.date = data.date + 'T00:00:00';
       const id = f.dataset.id;
-      const coll = f.dataset.form === 'event' ? 'events' : f.dataset.form === 'news' ? 'news' : f.dataset.form === 'project' ? 'projects' : 'bilanci';
+      const coll = f.dataset.form === 'event' ? 'events' : f.dataset.form === 'news' ? 'news' : f.dataset.form === 'project' ? 'projects' : 'documents';
       try {
         if (id) await api(`/api/${coll}/${id}`, { method: 'PUT', body: JSON.stringify(data) });
         else await api(`/api/${coll}`, { method: 'POST', body: JSON.stringify(data) });
